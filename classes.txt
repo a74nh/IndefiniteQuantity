@@ -1,0 +1,6 @@
+num1,num2,class,background,box,upkeeptype
+3,60,Blank,#F6E46B#CCCC66@90,#F5DA28,
+17,45,Socialist Union Republic Army,#480000#CC3333@90,#FF4719,
+8,22,Nuclear Bodgers,#1F330A#CCFF99@90,#85FF5C,Halflife
+13,34,Insectoids,#000080#33ADAD@90,#80CCCC,Hunger
+21,55,Void,#141F1F#1F2E2E@90,#3D5C5C,

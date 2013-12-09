@@ -1,0 +1,70 @@
+#linkmulti=num2
+linkmulti=num1
+LINK="C:\Users\Alan\Desktop\RobotEmpire\classes.txt"
+#linkmulti=num
+linkmulti=single
+LINK="C:\Users\Alan\Desktop\RobotEmpire\soldiers.txt" 
+
+[all]="1-{(num2)}"
+[ink]=#000000
+
+rectangle=[all],0,0,100%,100%,[background]
+
+[picture]=join("sourceimages\",[name],".jpg")
+image=[all],[picture],5%,17%,92%,70%
+   
+font=arial,6,T,[ink]
+text=[all],[class],1%,1%,25%,10%,left,wordwrap
+
+[typeimage]=join("sourceimages\",[type],".jpg")
+font=arial,15,T,[ink]
+text=[all],[name],0%,8%,100%,10%,center,center
+if = [type] <> "cover"
+  image=[all],[typeimage],5%,10%,5%,5%
+endif
+
+if = [cost] > -1
+  font=arial,16,T,[ink]
+  text=[all],[cost],92%,1%,5%,10%,left,wordwrap
+  font=arial,4,T,[ink]
+  text=[all],"cost",92%,8%,5%,10%,left,wordwrap
+endif
+
+[attack1]=join([attack], "  :  ",[defense])
+
+
+if = [type] = "soldier" 
+  rectangle=[all],4%,66%,20%,22%,#000000,[box],0.03
+
+  font=arial,4,T,[ink]
+  text=[all],"speed",5%,68%,18%,10%,center,wordwrap
+
+  font=arial,16,T,[ink]
+  text=[all],[speed],5%,70%,18%,10%,center,wordwrap
+
+  font=arial,4,T,[ink]
+  text=[all],"attack : defense",5%,78%,18%,10%,center,wordwrap
+
+  font=arial,16,T,[ink]
+  text=[all],[attack1],5%,80%,18%,10%,center,wordwrap
+
+
+  font=arial,4,T,[ink]
+  text=[all],"scrap",92%,90%,15%,10%,left,wordwrap
+  font=arial,16,T,[ink]
+  text=[all],[scrap],92%,92%,15%,10%,left,wordwrap
+endif
+
+if = [upkeep] > 0
+  font=arial,4,T,[ink]
+  text=[all],[upkeeptype],5%,90%,15%,10%,left,wordwrap
+  font=arial,16,T,[ink]
+  text=[all],[upkeep],5%,92%,15%,10%,left,wordwrap
+endif
+
+if = [comments] <> ""
+  font=arial,6,T,[ink]
+  rectangle=[all],28%,85%,60%,14%,#000000,[box],0.03 
+  text=[all],[comments],30%,85%,58%,13%,left,wwcenter
+endif
+
