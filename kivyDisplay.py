@@ -1,5 +1,6 @@
 import sys
 from threading import Thread
+import threading
 from cards import *
 from engine import *
 
@@ -16,6 +17,7 @@ from kivy.graphics import BorderImage
 from kivy.graphics import Callback
 from time import sleep
 from kivy.config import Config
+from kivy.properties import ListProperty
 
 #Config.set('graphics', 'width', '1920')
 #Config.set('graphics', 'height', '1080')
@@ -24,14 +26,43 @@ from kivy.config import Config
 currentDir=""
 #c:\Users\Alan\Desktop\RobotEmpire\\"
 
-##
-##make a card/cardlist/cardpile file
-##add subclasses here
-##make engine be passed in the classes
-##myclass = foo
-##instance = myclass()
-##
-##instance.x()
+
+class DisplayLock(object):
+
+    def __init__(self):
+        self.card = False
+        self._lock = threading.Lock()
+        
+    def acquire(self):
+        self._lock.acquire()
+        
+    def release(self,card):
+        self.card=card
+        if self._lock.locked():
+            self._lock.release()
+        
+    def __enter__(self):
+        self.acquire()
+        
+    def __exit__(self, type, value, traceback):
+        self.release()
+
+
+class CardScatter(Scatter):
+
+    pressed = ListProperty([0, 0])
+
+    clickable = False
+    
+    def on_touch_down(self, touch):
+        if self.collide_point(*touch.pos) and self.clickable:
+            self.pressed = touch.pos
+            # we consumed the touch. return False here to propagate
+            # the touch further to the children.
+            return True
+        return super(CardScatter, self).on_touch_down(touch)
+
+
 
 #
 #Represents a card
@@ -44,7 +75,8 @@ class KivyCard(Card):
         self.backImage = Image(source="back.png", allow_stretch=True, keep_ratio=True)
         #self.image.size= (50/self.image.image_ratio,50/self.image.image_ratio)
         #self.image.size_hint= (0.5, 0.5)
-        self.scatter = Scatter()
+        self.scatter = CardScatter()
+        self.scatter.bind(pressed=self.clicked)
         #self.scatter.do_rotation=False
         #self.scatter.do_scale=False
         self.scatter.size=self.image.size
@@ -56,6 +88,7 @@ class KivyCard(Card):
 
     def highlight(self,state):
         if state:
+            self.scatter.clickable=True
             with self.image.canvas.after:
                     bordersize=5
                     Color(1, 0, 0, .5, mode='rgba')
@@ -70,6 +103,7 @@ class KivyCard(Card):
                     #                                   border = (15, 16, 64, 16),
                     #                                   size = card.image.size)
         else:
+            self.scatter.clickable=False
             self.image.canvas.after.clear()
 
     def setState(self,state):
@@ -99,7 +133,7 @@ class KivyCard(Card):
 
         if not self.cb:
             with self.scatter.canvas:
-                self.cb = Callback(self.callback)
+                self.cb = Callback(self.destCallback)
         self.cb.ask_update()
 
         if wait:
@@ -107,7 +141,7 @@ class KivyCard(Card):
                 sleep(0)
         
 
-    def callback(self, instr):
+    def destCallback(self, instr):
         if self.has_dest:
             increment=10
             posx=self.scatter.pos[0]
@@ -127,6 +161,10 @@ class KivyCard(Card):
                     self.destPile.updateDisplay()
             ##TODO REMOVE CALLBACL WHEN REACHED!!!!
             #print "callback"
+
+    def clicked(self, instance, pos):
+        print ('pos: printed from root widget: {pos}'.format(pos=pos))
+        displayLock.release(self)
 
 
 class KivyCardList(CardList):
@@ -200,19 +238,10 @@ class KivyCardPile(CardPile):
             card.scatter.pos=(self.xpos,self.ypos)
             self.layout.add_widget(card.scatter)
         super(KivyCardPile,self).dealCard(newCardList,newState)
-        #if self.displayed:
-        #    card=self.peek()
-        #    card.scatter.pos=(self.xpos,self.ypos)
-        #    self.layout.add_widget(card.scatter)
 
     def append(self,card):
-##        if self.displayed:
-##            if self.displayed:
-##                pcard=self.peek()
-##                self.layout.remove_widget(pcard.scatter)
         super(KivyCardPile,self).append(card)
         if self.displayed:
-            #pcard=self.peek()
             card.setDest(self.xpos,self.ypos,self,True)
 
 
@@ -237,6 +266,9 @@ class MyApp(App):
         self.on=False
         self.phase=""
         diplayLayout=currentDir+"kivyDisplay.txt"
+
+        global displayLock
+        displayLock = DisplayLock()
         
         self.layout=[]
         with open(diplayLayout, 'rb') as layoutFile:
@@ -495,37 +527,26 @@ class MyApp(App):
         
         pickCard=[]
 
-        #Label all the pickable cards
-        index=1
-        for (cardList,card,cardIndex) in picklist:
-            if card.playable in playableStates :
-                card.highlight(True)
-                card.playableValue=index
-                index=index+1
-                pickCount.append((cardList,card,cardIndex))
-            else:
-                card.playableValue=0
-        #self.display()
+        while [ 1 ]:
+            displayLock.acquire()
+            
+            #Label all the pickable cards
+            index=1
+            for (cardList,card,cardIndex) in picklist:
+                if card.playable in playableStates :
+                    card.highlight(True)
+                    index=index+1
+                    pickCount.append((cardList,card,cardIndex))
 
-        if index>1:
-            #Pick one
-            valid=False
-            while (valid is not True):
-                charval = raw_input((printString+": ").format(1,index-1))
-                for cancelChar in cancelChars:
-                    if charval == cancelChar:
-                        return cancelChar
-                try:
-                    val=int(charval)
-                    if val>0 and val<index:
-                        valid=True
-                    
-                except ValueError:
-                    print("Oops!  That was not a valid number.  Try again...")
+            print (printString+": ").format(1,index-1)
+            displayLock.acquire()
+            print "Left lock!"
 
-            picked=pickCount[val-1]
-        
-        return picked
+            for pick in picklist:
+                (cardList,card,cardIndex) = pick
+                if card == displayLock.card :
+                    displayLock.release(False)
+                    return pick
 
         
     def moveCardTo(self,card,cardList):

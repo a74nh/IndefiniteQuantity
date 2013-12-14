@@ -359,7 +359,7 @@ class GameEngine(object):
                 if card.ctype != eCardTypes.soldier:
                     self.tableau.dealCard(self.tableau.enemySoldiers[i],
                                           self.tableau.enemyDiscard,
-                                          eCardState.turned)
+                                          eCardState.normal)
 
                 print "deal 4"
         self.tableau.null(eEngineStages.playerDeal)
@@ -632,14 +632,13 @@ class GameEngine(object):
         
         for workerPile in playerLists.workers:
             if not workerPile.peek().isBlank():
-
-                #self.tableau.playerStock.peek().state=eCardState.good
                 
                 self.tableau.dealCard(self.tableau.playerStock,
                                       workerPile,
                                       eCardState.good)
         
         self.tableau.null(eEngineStages.produceSell)
+
 
     def produceSell(self,playerLists):
 
