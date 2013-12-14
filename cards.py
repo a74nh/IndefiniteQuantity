@@ -9,7 +9,7 @@ def enum(*sequential, **named):
     return type('Enum', (), enums)
 
 
-ePlayable = enum("none","pfrom1","pto1","pfrom2","pto2","single","cost","cancel")
+ePlayable = enum("none","pfrom1","pto1","pfrom2","pto2","single","cost","cancel","done")
 
 eOrder = enum("first","second","both","neither")
 

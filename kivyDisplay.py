@@ -63,6 +63,44 @@ class CardScatter(Scatter):
         return super(CardScatter, self).on_touch_down(touch)
 
 
+class MyButton(Scatter):
+
+    pressed = ListProperty([0, 0])
+
+    clickable = False
+
+    def __init__(self,name,layout,**kwargs):
+        super(MyButton,self).__init__(**kwargs)
+        self.name=name
+        self.layout=layout
+        imagename=currentDir+name+".png"
+        self.image = Image(source=imagename, allow_stretch=True, keep_ratio=True)
+        self.size=self.image.size
+        self.size_hint=(None, None)
+        self.add_widget(self.image)
+        self.size=self.image.size
+
+    def enable(self, state):
+        if state:
+            self.layout.add_widget(self)
+            self.clickable=True
+        else:
+            self.layout.remove_widget(self)
+            self.clickable=False
+        
+    def on_touch_down(self, touch):
+        if self.collide_point(*touch.pos) and self.clickable:
+            self.pressed = touch.pos
+            # we consumed the touch. return False here to propagate
+            # the touch further to the children.
+            print ('Hit button {name} at {pos}'.format(name=self.name, pos=touch.pos))
+            displayLock.release(self)
+            return True
+        return super(MyButton, self).on_touch_down(touch)
+
+
+
+
 
 #
 #Represents a card
@@ -263,6 +301,7 @@ class MyApp(App):
     def build(self):
 
         self.lists=[]
+        self.buttons={}
         self.on=False
         self.phase=""
         diplayLayout=currentDir+"kivyDisplay.txt"
@@ -276,7 +315,9 @@ class MyApp(App):
             for row in layoutFile:
                 i=row.rstrip('\n')
                 j=i.rstrip('\r')
-                self.layout.append(j.split(","))
+                k=j.split(",")
+                if len(k)==4:
+                    self.layout.append(j.split(","))
 
 
         self.relativeLayout = RelativeLayout()
@@ -305,10 +346,6 @@ class MyApp(App):
         return self.relativeLayout
 
 
-    
-
-            
-
     def addList(self,newlist):
         self.lists.append(newlist)
 
@@ -334,30 +371,14 @@ class MyApp(App):
         if self.on:
             #print self.layout
             for [ltype,data,xpos,ypos] in self.layout:
-    ##            if ltype=="label":
-    ##                if data=="enemy":
-    ##                    print('Enemy : {0}'.format(self.enemysuite))
-    ##                elif data=="player":
-    ##                    print('Player {0}: {1}'.format(self.playerList.playerNumber,
-    ##                                                   self.playersuites[self.playerList.playerNumber-1]))
-    ##                elif data=="turn":
-    ##                    print('Turn {0}'.format(self.turn))
-    ##                elif data=="points":
-    ##                    print('Points {0}'.format(self.playerList.points))
-    ##            elif ltype=="text":
-    ##                print(data)
+
                 if ltype=="list":
                     for l in self.lists:
                         if l.name==data:
                             l.initDisplay(float(xpos),
                                           float(ypos),
                                           self.relativeLayout)
-                            break
-    ##            elif ltype=="listsize":
-    ##                for l in self.lists:
-    ##                    if l.name==data:
-    ##                        print("{0}:{1}".format(data,l.size()))
-    ##                        break
+                            
                 elif ltype=="playerlist":
                     for l in self.lists:
                         if l.name==data and l.player==self.playerList.playerNumber:
@@ -365,6 +386,11 @@ class MyApp(App):
                                           float(ypos),
                                           self.relativeLayout)
                             break
+                        
+                elif ltype=="button":
+                    button = MyButton(data,self.relativeLayout)
+                    button.pos=(float(xpos),float(ypos))
+                    self.buttons[data]=button
 
 
     def display(self):
@@ -383,7 +409,7 @@ class MyApp(App):
             picked=self.pickCard(pickableFrom,
                                  "Select multiple cards {0} to {1} or (c) to cancel",
                                  (ePlayable.single,),
-                                 ("c","d"))
+                                 True,True)
 
             if not picked:
                 break
@@ -421,7 +447,7 @@ class MyApp(App):
             picked=self.pickCard(pickableFrom,
                                  str+"{0} to {1} or (c) to cancel",
                                  (ePlayable.cost,),
-                                 ("c",))
+                                 True,False)
 
             if picked == "c":
                 pickedCards=[]
@@ -465,9 +491,9 @@ class MyApp(App):
         picked=self.pickCard(pickableFrom,
                              "Pick a card to play {0} to {1} or (d) for done",
                              (ePlayable.single,ePlayable.pfrom1,ePlayable.pfrom2),
-                             ("d",))
+                             True,True)
 
-        if picked == "d":
+        if picked == ePlayable.done:
             #reset all the playable-ness
             for (cardList,card,cardIndex) in pickableFrom:
                 card.playable=ePlayable.none
@@ -491,7 +517,7 @@ class MyApp(App):
         pickedTo=self.pickCard(pickableFrom,
                                "Pick position to put {0} to {1} or (c) to cancel",
                                (cardPicked.playable+1,),
-                               ("c",))
+                               True,True)
 
         retPlayable=cardPicked.playable
 
@@ -518,7 +544,7 @@ class MyApp(App):
         
 
     
-    def pickCard(self,picklist,printString,playableStates,cancelChars):
+    def pickCard(self,picklist,printString,playableStates,allowDone,allowCancel):
         picked=()
         pickCount=[]
 
@@ -527,27 +553,39 @@ class MyApp(App):
         
         pickCard=[]
 
+        displayLock.acquire()
+        
+        #Label all the pickable cards
+        index=1
+        for (cardList,card,cardIndex) in picklist:
+            if card.playable in playableStates :
+                card.highlight(True)
+                index=index+1
+                pickCount.append((cardList,card,cardIndex))
+
+        if allowDone:
+            self.buttons["done"].enable(True)
+        
         while [ 1 ]:
-            displayLock.acquire()
-            
-            #Label all the pickable cards
-            index=1
-            for (cardList,card,cardIndex) in picklist:
-                if card.playable in playableStates :
-                    card.highlight(True)
-                    index=index+1
-                    pickCount.append((cardList,card,cardIndex))
 
             print (printString+": ").format(1,index-1)
+
             displayLock.acquire()
             print "Left lock!"
 
-            for pick in picklist:
-                (cardList,card,cardIndex) = pick
-                if card == displayLock.card :
+            if type(displayLock.card) == KivyCard:
+                for pick in picklist:
+                    (cardList,card,cardIndex) = pick
+                    if card == displayLock.card :
+                        displayLock.release(False)
+                        if allowDone:
+                            self.buttons["done"].enable(False)
+                        return pick
+            elif type(displayLock.card) == MyButton and allowDone:
+                if displayLock.card.name == "done":
                     displayLock.release(False)
-                    return pick
-
+                    self.buttons["done"].enable(False)
+                    return ePlayable.done
         
     def moveCardTo(self,card,cardList):
         cardList.append(card)
@@ -628,26 +666,6 @@ if __name__ == '__main__':
 
     MyApp().run()
 
-##
-##    display = DisplayConsole(currentDir+"consoleDisplay.txt")
-##
-##    CardList.setDisplay(display)
-##    CardPile.setDisplay(display)
-##
-##    deck = Deck(currentDir+"classes.txt",currentDir+"soldiers.txt")
-##
-##    numberPlayers=1
-##
-##    tableau = Tableau(deck,numberPlayers,display)
-##
-##    display.tableau=tableau
-##
-##    engine = GameEngine(tableau)
-##
-##
-##    while 1:
-##        engine.run()
-##        #print(engine.phase)
 
 
 
