@@ -3,6 +3,7 @@ single,num,name,type,cost,attack,defense,speed,aglity,scrap,upkeep,comments
 1,20,worker,space,-1,0,0,0,0,0,0,""
 1,20,base,space,-1,0,0,0,0,0,0,""
 1,20,soldier,space,-1,0,0,0,0,0,0,""
+1,20,stock,space,-1,0,0,0,0,0,0,""
 
 1,1,Socialist Union Republic Army,cover,-1,0,0,0,0,0,0,"Where all men are equal. Soldiers are expense. High good production. Ship dodging."
 1,2,Smelting Factory,factory,-1,0,0,0,0,0,0,"Upkeep: All soldiers are subject to a service charge of 1 otherwise must be discarded."

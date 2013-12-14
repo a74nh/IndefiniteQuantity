@@ -17,9 +17,7 @@ eCardTypes = enum("space","worker","soldier","facility","instant","cover","facto
 
 eSuiteNames = enum("Blank","Socialist Union Republic Army","Nuclear Bodgers","Insectoids","Void")
 
-eCardState = enum("normal","dead","good")
-
-
+eCardState = enum("normal","dead","turned","good")
 
 #
 #Represents a card suite
@@ -116,12 +114,15 @@ class CardList(list):
         global display
         display = d
 
-    def moveI(self,position,otherlist):
-        otherlist.append(list.pop(self,position))
-        display.display()
-
-    def moveO(self,entry,otherlist):
-        self.moveI(list.index(self,entry),otherlist)
+    def pop(self,index=-1):
+         raise Exception("CardList pop")
+    
+##    def moveI(self,position,otherlist):
+##        otherlist.append(list.pop(self,position))
+##        display.display()
+##
+##    def moveO(self,entry,otherlist):
+##        self.moveI(list.index(self,entry),otherlist)
 
     def __str__(self):
         return ('{0} : {1} {2}'.format(self.name,self.player,len(self)))
@@ -132,8 +133,9 @@ class CardList(list):
     def size(self):
         return len(list)
 
-    def moveFrom(self,index,newCardList):
-        card=self.pop(index)
+    def moveFrom(self,index,newCardList,newState):
+        card=list.pop(self,index)
+        card.setState(newState)
         newCardList.append(card)
 
 ##    def append(self,card):
@@ -159,11 +161,12 @@ class CardPile(object):
         return self.__items == []
 
     #WARNING: ignores index
-    def insert(self,index,item):
-        #if index != -1:
-        #    raise Exception("CardPile can only pop last element")
-        self.__items.append(item)
-        display.display()
+    #TODO: REMOVE ME. Only used by undo
+##    def insert(self,index,item):
+##        #if index != -1:
+##        #    raise Exception("CardPile can only pop last element")
+##        self.__items.append(item)
+##        display.display()
 
     def append(self, item):
         self.__items.append(item)
@@ -171,21 +174,26 @@ class CardPile(object):
         display.display()
 
     #WARNING: ignores index
-    def pop(self,index=-1):
-        #if index != -1:
-        #    raise Exception("CardPile can only pop last element")
-        ret=self.__items.pop()
-        display.display()
-        return ret
+    #TODO: Internal only
+##    def pop(self,index=-1):
+##        #if index != -1:
+##        #    raise Exception("CardPile can only pop last element")
+##        ret=self.__items.pop()
+##        display.display()
+##        return ret
 
     def peek(self):
         return self.__items[-1]
 
+    def peekpeek(self):
+        return self.__items[-2]
+
     def size(self):
         return len(self.__items)
 
-    def dealCard(self,newCardList):
-        card=self.pop()
+    def dealCard(self,newCardList,newState):
+        card=self.__items.pop()
+        card.setState(newState)
         newCardList.append(card)
 
         

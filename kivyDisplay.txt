@@ -5,8 +5,8 @@ list,enemySoldiers1,110,500
 list,enemySoldiers2,210,500
 list,enemySoldiers3,310,500
 list,enemySoldiers4,410,500
-listsize,enemyStock,,
-listsize,enemyDiscard,,
+list,enemyStock,510,460
+list,enemyDiscard,610,460
 text,,,
 label,player,,
 label,turn,,
