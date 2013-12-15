@@ -97,6 +97,26 @@ class Card(object):
 
 
 
+class CardCounter(object):
+
+    def __init__(self, name, player, value, *args):
+        self.name=name
+        self.player=player
+        self.__value=value
+        display.addCounter(self)
+
+    @staticmethod
+    def setDisplay(d):
+        global display
+        display = d
+
+    def value(self):
+        return self.__value
+
+    def incValue(self,value):
+        self.__value=self.__value+value
+
+
 #
 # Overrides list to provide display updates each time something changes.
 # Class must be statically initialised with a display class

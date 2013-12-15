@@ -29,3 +29,5 @@ playerlist,playerScrap,50,50
 playerlist,playerHand,10,50
 
 button,done,500,50
+
+playerlabel,playerPoints,650,50

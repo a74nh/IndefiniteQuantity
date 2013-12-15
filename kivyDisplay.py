@@ -100,8 +100,6 @@ class MyButton(Scatter):
 
 
 
-
-
 #
 #Represents a card
 #    
@@ -124,15 +122,19 @@ class KivyCard(Card):
         self.has_dest=False
         self.cb=False
 
-    def highlight(self,state):
-        if state:
+    def highlight(self,highlighting):
+        image=self.image
+        if self.state==eCardState.turned or self.state==eCardState.good:
+            image=self.backImage
+            
+        if highlighting:
             self.scatter.clickable=True
-            with self.image.canvas.after:
+            with image.canvas.after:
                     bordersize=5
                     Color(1, 0, 0, .5, mode='rgba')
                     BorderImage(source=currentDir+'Conveyor Belt.jpg',
                                 border = (bordersize,bordersize,bordersize,bordersize),
-                                size = (self.image.width+(bordersize*2), self.image.height+(bordersize*2)),
+                                size = (image.width+(bordersize*2), image.height+(bordersize*2)),
                                 pos = (-bordersize,-bordersize))
 
                     #Color(1, 0, 0, .5, mode='rgba')
@@ -142,7 +144,7 @@ class KivyCard(Card):
                     #                                   size = card.image.size)
         else:
             self.scatter.clickable=False
-            self.image.canvas.after.clear()
+            image.canvas.after.clear()
 
     def setState(self,state):
         if self.state==eCardState.turned or self.state==eCardState.good:
@@ -203,6 +205,24 @@ class KivyCard(Card):
     def clicked(self, instance, pos):
         print ('pos: printed from root widget: {pos}'.format(pos=pos))
         displayLock.release(self)
+
+
+class KivyCardCounter(CardCounter):
+
+    def __init__(self, name, player, value, *args):
+        super(KivyCardCounter,self).__init__(name, player, value, *args)
+        self.displayed=False
+
+    def initDisplay(self,xpos,ypos,parentlayout):
+        self.displayed=True
+        self.xpos=xpos
+        self.ypos=ypos
+        self.label= Label(text="{0}".format(self.value()))
+        parentlayout.add_widget(self.label)
+
+    def incValue(self,value):
+        super(KivyCardCounter,self).incValue(value)
+        self.label.text="{0}".format(self.value())
 
 
 class KivyCardList(CardList):
@@ -301,7 +321,9 @@ class MyApp(App):
     def build(self):
 
         self.lists=[]
+        self.counters=[]
         self.buttons={}
+        self.labels={}
         self.on=False
         self.phase=""
         diplayLayout=currentDir+"kivyDisplay.txt"
@@ -326,13 +348,14 @@ class MyApp(App):
         
         CardList.setDisplay(self)
         CardPile.setDisplay(self)
-
+        CardCounter.setDisplay(self)
+        
         deck = Deck(currentDir+"classes.txt",currentDir+"soldiers.txt",KivyCard)
 
 
         numberPlayers=1
 
-        self.tableau = Tableau(deck,numberPlayers,self,KivyCardPile,KivyCardList)
+        self.tableau = Tableau(deck,numberPlayers,self,KivyCardPile,KivyCardList,KivyCardCounter)
 
         engine = GameEngine(self.tableau)
 
@@ -349,6 +372,9 @@ class MyApp(App):
     def addList(self,newlist):
         self.lists.append(newlist)
 
+    def addCounter(self,newcounter):
+        self.counters.append(newcounter)
+        
     def turnOn(self,value=True):
         self.on=value
 
@@ -392,16 +418,25 @@ class MyApp(App):
                     button.pos=(float(xpos),float(ypos))
                     self.buttons[data]=button
 
-
+                elif ltype=="playerlabel":
+                    print "counter1"
+                    for l in self.counters:
+                        print l.name
+                        if l.name==data and l.player==self.playerList.playerNumber:
+                            print "DO COUNTER"
+                            l.initDisplay(float(xpos),
+                                          float(ypos),
+                                          self.relativeLayout)
+                            break
+                    
     def display(self):
             print
             print(self.phase)
             print
 
 
-    def userPickList(self,pickableFrom):
+    def userPickList(self,pickableFrom,moveTo):
         pickedTuples=[]
-        pickedCards=[]
 
         pickedCost=0
         while 1:
@@ -413,17 +448,17 @@ class MyApp(App):
 
             if not picked:
                 break
-            
-            if picked == "c":
-                pickedCards=[]
+
+            if picked == ePlayable.cancel:
+                pickedTuples=[]
                 break
 
-            if picked == "d":
+            if picked == ePlayable.done:
                 break
 
-            print(picked)
             (cardList,card,index)=picked
             card.playable=ePlayable.none
+            card.highlight(False)
 
             pickedTuples.append(picked)
 
@@ -433,9 +468,23 @@ class MyApp(App):
             card.playable=ePlayable.none
 
         if len(pickedTuples)>0:
-            return pickedTuples
+            pickedTuples2=[]
 
+            for (cardList,card,index) in pickedTuples:
+                
+                if type(cardList) != KivyCardPile:
+                    raise Exception("cardListPicked {0} must currently be a KivyCardPile".format(type(cardList)))
+
+                if type(moveTo) != KivyCardPile:
+                    raise Exception("cardList {0} must currently be a KivyCardPile".format(type(moveTo)))
+
+                cardList.dealCard(moveTo,eCardState.normal)
+
+                pickedTuples2.append((cardList,card,-1))
+            return pickedTuples2
+            
         return False
+
 
     def userPickCost(self,pickableFrom,price,moveTo):
         pickedTuples=[]
@@ -447,9 +496,9 @@ class MyApp(App):
             picked=self.pickCard(pickableFrom,
                                  str+"{0} to {1} or (c) to cancel",
                                  (ePlayable.cost,),
-                                 True,False)
+                                 False,True)
 
-            if picked == "c":
+            if picked == ePlayable.cancel:
                 pickedCards=[]
                 break
 
@@ -474,7 +523,7 @@ class MyApp(App):
                     raise Exception("cardListPicked {0} must currently be a KivyCardList".format(type(cardList)))
 
                 if type(moveTo) != KivyCardPile:
-                    raise Exception("cardList {0} must currently be a KivyCardPile".format(type(cardList)))
+                    raise Exception("cardList {0} must currently be a KivyCardPile".format(type(moveTo)))
 
                 index=cardList.index(card)
 
@@ -491,7 +540,7 @@ class MyApp(App):
         picked=self.pickCard(pickableFrom,
                              "Pick a card to play {0} to {1} or (d) for done",
                              (ePlayable.single,ePlayable.pfrom1,ePlayable.pfrom2),
-                             True,True)
+                             True,False)
 
         if picked == ePlayable.done:
             #reset all the playable-ness
@@ -517,7 +566,7 @@ class MyApp(App):
         pickedTo=self.pickCard(pickableFrom,
                                "Pick position to put {0} to {1} or (c) to cancel",
                                (cardPicked.playable+1,),
-                               True,True)
+                               False,True)
 
         retPlayable=cardPicked.playable
 
@@ -526,7 +575,7 @@ class MyApp(App):
             card.playable=ePlayable.none
             card.highlight(False)
 
-        if pickedTo == "c":
+        if pickedTo == ePlayable.cancel:
             return (ePlayable.cancel,False,False)
 
         (cardListTo,cardTo,indexTo)=pickedTo

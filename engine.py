@@ -15,10 +15,11 @@ eEngineStages = enum("upkeepInit","upkeep","enemyDealInit","enemyDeal","enemyDea
 
 
 class PlayerCardLists(object):
-    def __init__(self,playerNumber,suite,CardPile,CardList):
+    def __init__(self,playerNumber,suite,CardPile,CardList,CardCounter):
         self.playerNumber=playerNumber
         self.suite=suite
-        self.points=0
+
+        self.points=CardCounter("playerPoints", playerNumber, 0)
         
         self.hand=CardList("playerHand",playerNumber)
         self.spareWorkers=CardPile("playerSpareWorkers",playerNumber)
@@ -40,7 +41,7 @@ class PlayerCardLists(object):
 #
 class Tableau(object):
     
-    def __init__(self,deck,numberPlayers,display,CardPile,CardList):
+    def __init__(self,deck,numberPlayers,display,CardPile,CardList,CardCounter):
         self.deck=deck
         self.numberPlayers=numberPlayers
         self.display=display
@@ -59,7 +60,7 @@ class Tableau(object):
         self.enemyDiscard=CardPile("enemyDiscard",0)
         self.__playerLists=[]
         for x in range(numberPlayers):
-            self.__playerLists.append(PlayerCardLists(x+1,deck.suites[x+1],CardPile,CardList))
+            self.__playerLists.append(PlayerCardLists(x+1,deck.suites[x+1],CardPile,CardList,CardCounter))
         self.playerDiscard=CardPile("playerDiscard",0)
 
         for card in deck.cards:
@@ -97,10 +98,6 @@ class Tableau(object):
             self.enemySoldiers.append(pile)
         self.enemyDiscard.append(stockBlanks.pop())
         self.playerDiscard.append(stockBlanks.pop())
-        #random.shuffle(self.playerStock)
-
-        #for x in range(numberPlayers):
-        #    self.dealPlayer(x,5)
         
         self.display.turnOn()
         self.__phase=-1
@@ -260,11 +257,11 @@ class Tableau(object):
                                                                  'arg2': index,
                                                                  'arg3': cardList})
 
-    def userPickList(self,nextEngineStage,pickableFrom):
+    def userPickList(self,nextEngineStage,pickableFrom,moveTo):
         self.__setStage(nextEngineStage)
 
         self.pickedCostList=[]
-        ret=self.display.userPickList(pickableFrom)
+        ret=self.display.userPickList(pickableFrom,moveTo)
 
         if ret is False:
             self.pickedCost=False
@@ -524,8 +521,6 @@ class GameEngine(object):
         pickedList=self.tableau.pickedCostList
 
         if self.tableau.pickedCost:
-            #for card in pickedList:
-            #    self.tableau.playerDiscard.append(card) #need a special func for this?
             self.tableau.null(eEngineStages.attackInit)
 
         else:
@@ -564,20 +559,6 @@ class GameEngine(object):
     
         self.tableau.null(eEngineStages.attackSetup)
 
-             
-##    def attackAfter(self,playerLists):
-##        (enemyResult,playerResult)=self.tableau.attacked
-##
-##        if not enemyResult:
-##            self.tableau.enemySoldiers[self.tableau.attackPhase].peek().state=eCardState.dead
-##            #self.tableau.enemyDiscard.append(self.tableau.enemySoldiers[self.tableau.attackPhase].pop())
-##
-##        if not playerResult:
-##            playerLists.soldiers[self.tableau.attackPhase].peek().state=eCardState.dead
-##            #self.tableau.playerDiscard.append(playerLists.soldiers[self.tableau.attackPhase].pop())
-##                
-##        self.tableau.null(eEngineStages.attackSetup)
-
 
     def collectInit(self,playerLists):
         self.tableau.lootPhase=-1
@@ -600,16 +581,14 @@ class GameEngine(object):
         if not playerSoldier.isBlank() and playerSoldier.state==eCardState.dead:
             print("move dead card to discard")
             
-            #playerSoldier.setState(eCardState.normal)
-
         playerSoldier=playerLists.soldiers[self.tableau.lootPhase].peek()
 
         if ( playerSoldier.isBlank() and not playerWorker.isBlank()
                                    and not enemySoldier.isBlank()
                                    and not enemySoldier.state==eCardState.dead ):
             print("move worker to discard")
-            self.tableau.playerDiscard.append(playerLists.workers[self.tableau.lootPhase].pop())
-
+            playerLists.workers[self.tableau.lootPhase].dealCard(self.tableau.playerDiscard,eCardState.normal)
+            
         if not enemySoldier.isBlank() and enemySoldier.state==eCardState.dead:
 
             if not playerSoldier.isBlank():
@@ -653,7 +632,7 @@ class GameEngine(object):
                 card.playable=ePlayable.none
 
         if len(playableList)>0:
-            self.tableau.userPickList(eEngineStages.produceSold,playableList)
+            self.tableau.userPickList(eEngineStages.produceSold,playableList,self.tableau.playerDiscard)
         else:
             self.tableau.null(eEngineStages.nextPlayer)
 
@@ -662,13 +641,7 @@ class GameEngine(object):
 
         if self.tableau.pickedCost:
             for card in pickedList:
-                #card.state=eCardState.normal                
-                #self.tableau.playerDiscard.append(card) #need a special func for this?
-                #TODO not cardPile. This is going to error!
-                self.tableau.dealCard(cardPile,
-                                      self.tableau.playerDiscard,
-                                      eCardState.normal)
-                playerLists.points = playerLists.points + 1
+                playerLists.points.incValue(1)
 
         self.tableau.null(eEngineStages.produceDeal)
 
