@@ -18,6 +18,7 @@ from kivy.graphics import Callback
 from time import sleep
 from kivy.config import Config
 from kivy.properties import ListProperty
+from kivy.core.window import Window
 
 #Config.set('graphics', 'width', '1920')
 #Config.set('graphics', 'height', '1080')
@@ -48,7 +49,7 @@ class DisplayLock(object):
         self.release()
 
 
-class CardScatter(Scatter):
+class CardScatter(ScatterLayout):
 
     pressed = ListProperty([0, 0])
 
@@ -109,18 +110,23 @@ class KivyCard(Card):
         imagename=currentDir+"out/cards_{0:02}.png".format(self.number)
         self.image = Image(source=imagename, allow_stretch=True, keep_ratio=True)
         self.backImage = Image(source="back.png", allow_stretch=True, keep_ratio=True)
-        #self.image.size= (50/self.image.image_ratio,50/self.image.image_ratio)
-        #self.image.size_hint= (0.5, 0.5)
+        self.image.size= (Window.height*self.image.image_ratio, Window.height)
+
         self.scatter = CardScatter()
+        self.scatter.size=self.image.size
+        self.scatter.size_hint= (None, None)
+        self.scatter.scale = 0.2
+        
         self.scatter.bind(pressed=self.clicked)
-        #self.scatter.do_rotation=False
-        #self.scatter.do_scale=False
-        self.scatter.size=self.image.size
-        self.scatter.size_hint=(None, None)
+
         self.scatter.add_widget(self.image)
-        self.scatter.size=self.image.size
+
         self.has_dest=False
         self.cb=False
+        if self.suite.name == eSuiteNames.Blank:
+            self.image.opacity=0.5
+            #with selfimage.canvas.before:
+            #    Color(1, 0, 0, .5, mode='rgba')
 
     def highlight(self,highlighting):
         image=self.image
@@ -130,12 +136,12 @@ class KivyCard(Card):
         if highlighting:
             self.scatter.clickable=True
             with image.canvas.after:
-                    bordersize=5
+                    bordersize=0
                     Color(1, 0, 0, .5, mode='rgba')
-                    BorderImage(source=currentDir+'Conveyor Belt.jpg',
-                                border = (bordersize,bordersize,bordersize,bordersize),
-                                size = (image.width+(bordersize*2), image.height+(bordersize*2)),
-                                pos = (-bordersize,-bordersize))
+                    BorderImage(source=currentDir+'out/cards_04.png',
+                                border = (1,1,1,1),
+                                size = image.size,
+                                pos = image.pos)
 
                     #Color(1, 0, 0, .5, mode='rgba')
                     #Rectangle(pos=card.scatter.pos, size=card.scatter.size)
@@ -237,7 +243,7 @@ class KivyCardList(CardList):
         self.ypos=ypos
         self.layout= RelativeLayout()
         parentlayout.add_widget(self.layout)
-        self.ipos=100
+        #self.ipos=(card.image.width*card.scatter.scale)
         self.updateDisplay()
 
     def updateDisplay(self):
@@ -246,7 +252,7 @@ class KivyCardList(CardList):
         for card in self:
             card.scatter.pos=(self.xpos+offset,self.ypos)
             self.layout.add_widget(card.scatter)
-            offset=offset+100
+            offset=offset+(card.image.width*card.scatter.scale)
 
     def moveFrom(self,index,newCardList,newState):
         if self.displayed:
@@ -258,12 +264,12 @@ class KivyCardList(CardList):
             offset=0
             for card in self:
                 card.scatter.pos=(self.xpos+offset,self.ypos)
-                offset=offset+100
+                offset=offset+(card.image.width*card.scatter.scale)
 
     def append(self,card):
         super(KivyCardList,self).append(card)
         if self.displayed:
-            offset=(len(self)-1)*100
+            offset=(len(self)-1)*(card.image.width*card.scatter.scale)
             card.setDest(self.xpos+offset,self.ypos,self,True)
             
 
@@ -285,7 +291,14 @@ class KivyCardPile(CardPile):
     def updateDisplay(self):
         self.layout.clear_widgets()
         card=self.peek()
-        card.scatter.pos=(self.xpos,self.ypos)
+        offset=0
+        if card.state == eCardState.good:
+            offset=10
+            card2=self.peekpeek()
+            card2.scatter.pos=(self.xpos,self.ypos)
+            self.layout.add_widget(card2.scatter)
+            
+        card.scatter.pos=(self.xpos+offset,self.ypos-offset)
         self.layout.add_widget(card.scatter)
 
     def dealCard(self,newCardList,newState):
@@ -299,8 +312,11 @@ class KivyCardPile(CardPile):
 
     def append(self,card):
         super(KivyCardPile,self).append(card)
+        offset=0
+        if card.state == eCardState.good:
+            offset=10
         if self.displayed:
-            card.setDest(self.xpos,self.ypos,self,True)
+            card.setDest(self.xpos+offset,self.ypos-offset,self,True)
 
 
 
@@ -320,6 +336,8 @@ class MyApp(App):
 
     def build(self):
 
+        #Window.size = (1920,1080)
+        #Window.size = (1200,900)
         self.lists=[]
         self.counters=[]
         self.buttons={}
@@ -401,15 +419,15 @@ class MyApp(App):
                 if ltype=="list":
                     for l in self.lists:
                         if l.name==data:
-                            l.initDisplay(float(xpos),
-                                          float(ypos),
+                            l.initDisplay(Window.width*float(xpos)/100,
+                                          Window.height*float(ypos)/100,
                                           self.relativeLayout)
                             
                 elif ltype=="playerlist":
                     for l in self.lists:
                         if l.name==data and l.player==self.playerList.playerNumber:
-                            l.initDisplay(float(xpos),
-                                          float(ypos),
+                            l.initDisplay(Window.width*float(xpos)/100,
+                                          Window.height*float(ypos)/100,
                                           self.relativeLayout)
                             break
                         

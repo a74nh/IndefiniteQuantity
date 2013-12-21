@@ -1,23 +1,23 @@
 
-list,enemySoldiers0,10,500
-list,enemySoldiers1,110,500
-list,enemySoldiers2,210,500
-list,enemySoldiers3,310,500
-list,enemySoldiers4,410,500
-list,enemyStock,510,460
-list,enemyDiscard,610,460
+list,enemySoldiers0,5,78
+list,enemySoldiers1,15,78
+list,enemySoldiers2,25,78
+list,enemySoldiers3,35,78
+list,enemySoldiers4,45,78
+list,enemyStock,68,78
+list,enemyDiscard,80,78
 
-playerlist,playerSoldiers0,10,300
-playerlist,playerSoldiers1,110,300
-playerlist,playerSoldiers2,210,300
-playerlist,playerSoldiers3,310,300
-playerlist,playerSoldiers4,410,300
+playerlist,playerSoldiers0,5,48
+playerlist,playerSoldiers1,15,48
+playerlist,playerSoldiers2,25,48
+playerlist,playerSoldiers3,35,48
+playerlist,playerSoldiers4,45,48
 
-playerlist,playerWorkers0,10,200
-playerlist,playerWorkers1,110,200
-playerlist,playerWorkers2,210,200
-playerlist,playerWorkers3,310,200
-playerlist,playerWorkers4,410,200
+playerlist,playerWorkers0,5,26
+playerlist,playerWorkers1,15,26
+playerlist,playerWorkers2,25,26
+playerlist,playerWorkers3,35,26
+playerlist,playerWorkers4,45,26
 
 playerlist,playerBase0,550,250
 playerlist,playerBase1,650,250
@@ -26,7 +26,10 @@ playerlist,playerBase3,650,150
 playerlist,playerBase4,550,50
 
 playerlist,playerScrap,50,50
-playerlist,playerHand,10,50
+playerlist,playerHand,5,3
+
+list,playerStock,68,3
+list,playerDiscard,80,3
 
 button,done,500,50
 
