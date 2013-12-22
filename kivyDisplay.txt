@@ -28,8 +28,8 @@ playerlist,playerBase4,550,50
 playerlist,playerScrap,50,50
 playerlist,playerHand,5,3
 
-list,playerStock,68,3
-list,playerDiscard,80,3
+list,playerStock,68,30
+list,playerDiscard,80,30
 
 button,done,500,50
 

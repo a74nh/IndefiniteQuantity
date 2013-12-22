@@ -1,2 +1,4 @@
-title=RobotEmpireauthor=AlanHayward
+title=Indefinate Quantity
+author=AlanHayward
+
 orientation=landscape

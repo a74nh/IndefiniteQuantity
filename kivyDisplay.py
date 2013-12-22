@@ -1,6 +1,9 @@
 import sys
 from threading import Thread
 import threading
+import math
+from time import sleep
+
 from cards import *
 from engine import *
 
@@ -15,7 +18,6 @@ from kivy.graphics import Color
 from kivy.graphics import Rectangle
 from kivy.graphics import BorderImage
 from kivy.graphics import Callback
-from time import sleep
 from kivy.config import Config
 from kivy.properties import ListProperty
 from kivy.core.window import Window
@@ -177,6 +179,17 @@ class KivyCard(Card):
             parent.remove_widget(self.destPile.layout)
             parent.add_widget(self.destPile.layout)
 
+        xdist = abs(self.scatter.pos[0]-x)
+        ydist = abs(self.scatter.pos[1]-y)
+
+        if xdist == 0:  #avoid div by zero
+            self.xmove=0
+            self.ymove = 2 * Window.height / 100
+        else:
+            theta = math.atan(ydist/xdist)
+            self.xmove = 2 * math.cos(theta) * Window.height / 100
+            self.ymove = 2 * math.sin(theta) * Window.height / 100
+
         if not self.cb:
             with self.scatter.canvas:
                 self.cb = Callback(self.destCallback)
@@ -189,17 +202,17 @@ class KivyCard(Card):
 
     def destCallback(self, instr):
         if self.has_dest:
-            increment=10
+            #increment=10
             posx=self.scatter.pos[0]
             posy=self.scatter.pos[1]
             if posx < self.dest[0]:
-                posx = min(posx+increment,self.dest[0])
+                posx = min(posx+self.xmove,self.dest[0])
             elif posx > self.dest[0]:
-                posx = max(posx-increment,self.dest[0])    
+                posx = max(posx-self.xmove,self.dest[0])    
             if posy < self.dest[1]:
-                posy = min(posy+increment,self.dest[1])
+                posy = min(posy+self.ymove,self.dest[1])
             elif posy > self.dest[1]:
-                posy = max(posy-increment,self.dest[1])      
+                posy = max(posy-self.ymove,self.dest[1])      
             self.scatter.pos=(posx,posy)
             if posx == self.dest[0] and posy == self.dest[1]:
                 self.has_dest=False
@@ -361,7 +374,13 @@ class MyApp(App):
 
 
         self.relativeLayout = RelativeLayout()
+        self.relativeLayout.size_hint=(None, None)
+        #self.relativeLayout.pos_hint={'x':0,'y':0}
 
+        background = Image(source="background.jpg", allow_stretch=True, keep_ratio=True)
+        background.size= (Window.height*background.image_ratio, Window.height)
+        self.relativeLayout.add_widget(background)
+        
         self.tableau=0
         
         CardList.setDisplay(self)
