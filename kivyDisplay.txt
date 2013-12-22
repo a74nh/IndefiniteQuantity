@@ -25,12 +25,13 @@ playerlist,playerBase2,550,150
 playerlist,playerBase3,650,150
 playerlist,playerBase4,550,50
 
-playerlist,playerScrap,50,50
+playerlist,playerScrap,60,3
 playerlist,playerHand,5,3
 
 list,playerStock,68,30
 list,playerDiscard,80,30
 
-button,done,500,50
+button,done,65,56
+button,attack,65,56
 
 playerlabel,playerPoints,650,50

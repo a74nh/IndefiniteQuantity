@@ -265,7 +265,7 @@ class KivyCardList(CardList):
         for card in self:
             card.scatter.pos=(self.xpos+offset,self.ypos)
             self.layout.add_widget(card.scatter)
-            offset=offset+(card.image.width*card.scatter.scale)
+            offset=offset+(card.image.width*card.scatter.scale*0.6)
 
     def moveFrom(self,index,newCardList,newState):
         if self.displayed:
@@ -277,12 +277,12 @@ class KivyCardList(CardList):
             offset=0
             for card in self:
                 card.scatter.pos=(self.xpos+offset,self.ypos)
-                offset=offset+(card.image.width*card.scatter.scale)
+                offset=offset+(card.image.width*card.scatter.scale*0.6)
 
     def append(self,card):
         super(KivyCardList,self).append(card)
         if self.displayed:
-            offset=(len(self)-1)*(card.image.width*card.scatter.scale)
+            offset=(len(self)-1)*(card.image.width*card.scatter.scale*0.6)
             card.setDest(self.xpos+offset,self.ypos,self,True)
             
 
@@ -452,7 +452,8 @@ class MyApp(App):
                         
                 elif ltype=="button":
                     button = MyButton(data,self.relativeLayout)
-                    button.pos=(float(xpos),float(ypos))
+                    button.pos=(Window.width*float(xpos)/100,
+                                Window.height*float(ypos)/100)
                     self.buttons[data]=button
 
                 elif ltype=="playerlabel":
@@ -657,7 +658,6 @@ class MyApp(App):
             print (printString+": ").format(1,index-1)
 
             displayLock.acquire()
-            print "Left lock!"
 
             if type(displayLock.card) == KivyCard:
                 for pick in picklist:
@@ -683,10 +683,16 @@ class MyApp(App):
         card1=pile1.peek()
         card2=pile2.peek()
         
-        print "{0} -> {1}/{2}".format(card1.actualSpeed,card1.actualAttack,card1.actualDefense)
-        print "{0} -> {1}/{2}".format(card2.actualSpeed,card2.actualAttack,card2.actualDefense)
-        charval = raw_input("ATTACK [enter]")
-        
+        print "Enemy  {0} -> {1}/{2}".format(card1.actualSpeed,card1.actualAttack,card1.actualDefense)
+        print "Player {0} -> {1}/{2}".format(card2.actualSpeed,card2.actualAttack,card2.actualDefense)
+        #charval = raw_input("ATTACK [enter]")
+
+        displayLock.acquire()
+        self.buttons["attack"].enable(True)
+        displayLock.acquire()
+        self.buttons["attack"].enable(False)
+        displayLock.release(False)
+
         card1Survive = True            
         card2Survive = True            
 
@@ -738,10 +744,10 @@ class MyApp(App):
             while card1.has_dest or card2.has_dest:
                 sleep(0)
 
-        print "card1 survives={0}".format(card1Survive)
-        print "card2 survives={0}".format(card2Survive)
+        print "Enemy  survives={0}".format(card1Survive)
+        print "Player survives={0}".format(card2Survive)
 
-        charval = raw_input("ATTACK END [enter]")
+        #charval = raw_input("ATTACK END [enter]")
 
         return (card1Survive,card2Survive)
 
