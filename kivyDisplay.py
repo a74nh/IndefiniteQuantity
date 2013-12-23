@@ -121,6 +121,7 @@ class KivyCard(Card):
         self.scatter.size=self.image.size
         self.scatter.size_hint= (None, None)
         self.scatter.scale = 0.2
+        self.scatter.do_translation = False
         
         self.scatter.bind(pressed=self.clicked)
 
@@ -265,7 +266,6 @@ class KivyCardCounter(CardCounter):
         self.ypos=ypos
         self.label= Label(text="{0}".format(self.value()), font_size=fontsize)
         self.label.pos=(xpos,ypos)
-        print self.label.pos
         parentlayout.add_widget(self.label)
 
     def incValue(self,value):
@@ -461,7 +461,9 @@ class MyApp(App):
 
     def updatePhase(self,oldphase,newphase):
         self.phase=newphase
-        #self.display()
+        if oldphase != -1:
+            self.buttons[ePhases.reverse_mapping[oldphase]+"_phase"].enable(False)
+        self.buttons[ePhases.reverse_mapping[newphase]+"_phase"].enable(True)
 
     def updatePlayer(self,newplayerList,turn):
         self.playerList=newplayerList
@@ -503,9 +505,10 @@ class MyApp(App):
                                   self.relativeLayout)
                     
     def display(self):
-            print
-            print(self.phase)
-            print
+        pass
+##            print
+##            print(self.phase)
+##            print
 
 
     def userPickList(self,pickableFrom,moveTo):
@@ -762,7 +765,7 @@ class MyApp(App):
         else:
             
             card1.setDest(card1.scatter.pos[0],card1.scatter.pos[1]-50,card1.scatter.scale,False,False)
-            card2.setDest(card2.scatter.pos[0],card2.scatter.pos[1]+50,card2.scatter.scale,False,False)
+            card2.setDest(card2.scatter.pos[0],card2.scatter.pos[1]+50,card2.scatter.scale,False,True)
             while card1.has_dest or card2.has_dest:
                 sleep(0)
             
@@ -775,7 +778,7 @@ class MyApp(App):
                 card1Survive=False
 
             card1.setDest(card1.scatter.pos[0],card1.scatter.pos[1]+50,card1.scatter.scale,False,False)
-            card2.setDest(card2.scatter.pos[0],card2.scatter.pos[1]-50,card2.scatter.scale,False,False)
+            card2.setDest(card2.scatter.pos[0],card2.scatter.pos[1]-50,card2.scatter.scale,False,True)
             while card1.has_dest or card2.has_dest:
                 sleep(0)
 

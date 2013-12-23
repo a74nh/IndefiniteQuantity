@@ -13,7 +13,8 @@ eEngineStages = enum("upkeepInit","upkeep","enemyDealInit","enemyDeal","enemyDea
                      "produceInit","produce","produceSell","produceSold","produceDeal",
                      "nextPlayer")
 
-
+ePhases = enum("upkeep","build","attack","collect","produce")
+               
 class PlayerCardLists(object):
     def __init__(self,playerNumber,suite,CardPile,CardList,CardCounter):
         self.playerNumber=playerNumber
@@ -320,7 +321,7 @@ class GameEngine(object):
 
 
     def upkeepInit(self,playerLists):
-        self.tableau.setPhase(eEngineStages.upkeep,"upkeep")
+        self.tableau.setPhase(eEngineStages.upkeep,ePhases.upkeep)
 
 
     def upkeep(self,playerLists):
@@ -382,7 +383,7 @@ class GameEngine(object):
 
 
     def buildInit(self,playerLists):
-        self.tableau.setPhase(eEngineStages.buildSetup,"build")
+        self.tableau.setPhase(eEngineStages.buildSetup,ePhases.build)
 
     
     def buildSetup(self,playerLists):
@@ -530,7 +531,7 @@ class GameEngine(object):
 
     def attackInit(self,playerLists):
         self.tableau.attackPhase=-1
-        self.tableau.setPhase(eEngineStages.attackSetup,"attack")
+        self.tableau.setPhase(eEngineStages.attackSetup,ePhases.attack)
         
 
     def attackSetup(self,playerLists):
@@ -562,7 +563,7 @@ class GameEngine(object):
 
     def collectInit(self,playerLists):
         self.tableau.lootPhase=-1
-        self.tableau.setPhase(eEngineStages.collectSetup,"collect")
+        self.tableau.setPhase(eEngineStages.collectSetup,ePhases.collect)
 
 
     def collectSetup(self,playerLists):
@@ -578,16 +579,32 @@ class GameEngine(object):
         enemySoldierPile=self.tableau.enemySoldiers[self.tableau.lootPhase]
         enemySoldier=enemySoldierPile.peek()
         
-        if not playerSoldier.isBlank() and playerSoldier.state==eCardState.dead:
+        if (not playerSoldier.isBlank()) and playerSoldier.state==eCardState.dead:
             print("move dead card to discard")
-            
+            playerSoldierPile.dealCard(self.tableau.playerDiscard,eCardState.normal)
+
+        #update player soldier    
         playerSoldier=playerLists.soldiers[self.tableau.lootPhase].peek()
 
-        if ( playerSoldier.isBlank() and not playerWorker.isBlank()
-                                   and not enemySoldier.isBlank()
-                                   and not enemySoldier.state==eCardState.dead ):
+        if ( playerSoldier.isBlank() and (not playerWorker.isBlank())
+                                     and (not enemySoldier.isBlank())
+                                     and (not enemySoldier.state==eCardState.dead) ):
             print("move worker to discard")
+            oldx=enemySoldier.scatter.x
+            oldy=enemySoldier.scatter.y
+
+            print playerSoldier.scatter.x
+            print playerSoldier.scatter.y
+            enemySoldier.setDest(playerWorker.scatter.x,playerWorker.scatter.y,enemySoldier.scatter.scale,False,True)
+
+            print("move worker to discard2")
+
             playerLists.workers[self.tableau.lootPhase].dealCard(self.tableau.playerDiscard,eCardState.normal)
+
+            print("move worker to discard3")
+
+            enemySoldier.setDest(oldx,oldy,enemySoldier.scatter.scale,False,True)
+        
             
         if not enemySoldier.isBlank() and enemySoldier.state==eCardState.dead:
 
@@ -604,7 +621,7 @@ class GameEngine(object):
 
     def produceInit(self,playerLists):
         self.tableau.lootPhase=-1
-        self.tableau.setPhase(eEngineStages.produce,"produce")
+        self.tableau.setPhase(eEngineStages.produce,ePhases.produce)
 
 
     def produce(self,playerLists):

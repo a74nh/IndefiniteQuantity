@@ -35,4 +35,11 @@ list,playerDiscard,86,48,0.1
 button,done,59,48,0.1
 button,attack,59,48,0.1
 
+button,upkeep_phase,59,60,0.1
+button,build_phase,59,60,0.1
+button,attack_phase,59,60,0.1
+button,collect_phase,59,60,0.1
+button,produce_phase,59,60,0.1
+
+
 playerlabel,playerPoints,45,48,20sp
