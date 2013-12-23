@@ -392,8 +392,8 @@ class MyApp(App):
 
         #Window.size = (1920,1080)
         #Window.size = (1200,900)
-        self.lists=[]
-        self.counters=[]
+        self.lists={}
+        self.counters={}
         self.buttons={}
         self.labels={}
         self.on=False
@@ -448,10 +448,10 @@ class MyApp(App):
 
 
     def addList(self,newlist):
-        self.lists.append(newlist)
+        self.lists[newlist.name+str(newlist.player)]=newlist
 
     def addCounter(self,newcounter):
-        self.counters.append(newcounter)
+        self.counters[newcounter.name+str(newcounter.player)]=newcounter
         
     def turnOn(self,value=True):
         self.on=value
@@ -477,21 +477,18 @@ class MyApp(App):
             for [ltype,data,xpos,ypos,scale] in self.layout:
 
                 if ltype=="list":
-                    for l in self.lists:
-                        if l.name==data:
-                            l.initDisplay(int(Window.width*float(xpos)/100),
-                                          int(Window.height*float(ypos)/100),
-                                          float(scale),
-                                          self.relativeLayout)
+                    l=self.lists[data+str(0)]
+                    l.initDisplay(int(Window.width*float(xpos)/100),
+                                  int(Window.height*float(ypos)/100),
+                                  float(scale),
+                                  self.relativeLayout)
                             
                 elif ltype=="playerlist":
-                    for l in self.lists:
-                        if l.name==data and l.player==self.playerList.playerNumber:
-                            l.initDisplay(int(Window.width*float(xpos)/100),
-                                          int(Window.height*float(ypos)/100),
-                                          float(scale),
-                                          self.relativeLayout)
-                            break
+                    l=self.lists[data+str(self.playerList.playerNumber)]
+                    l.initDisplay(int(Window.width*float(xpos)/100),
+                                  int(Window.height*float(ypos)/100),
+                                  float(scale),
+                                  self.relativeLayout)
                         
                 elif ltype=="button":
                     button = MyButton(data,self.relativeLayout)
@@ -501,13 +498,11 @@ class MyApp(App):
                     self.buttons[data]=button
 
                 elif ltype=="playerlabel":
-                    for l in self.counters:
-                        if l.name==data and l.player==self.playerList.playerNumber:
-                            l.initDisplay(int(Window.width*float(xpos)/100),
-                                          int(Window.height*float(ypos)/100),
-                                          scale,
-                                          self.relativeLayout)
-                            break
+                    l=self.counters[data+str(self.playerList.playerNumber)]
+                    l.initDisplay(int(Window.width*float(xpos)/100),
+                                  int(Window.height*float(ypos)/100),
+                                  scale,
+                                  self.relativeLayout)
                     
     def display(self):
             print
