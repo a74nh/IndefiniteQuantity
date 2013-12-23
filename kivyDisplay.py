@@ -133,6 +133,9 @@ class KivyCard(Card):
             #with selfimage.canvas.before:
             #    Color(1, 0, 0, .5, mode='rgba')
 
+        self.highlighted = Image(source=currentDir+'border.png', allow_stretch=True, keep_ratio=True)
+        self.highlighted.size= self.image.size
+
         self.lock = threading.Lock()
 
 
@@ -144,18 +147,13 @@ class KivyCard(Card):
         if highlighting:
             self.scatter.clickable=True
             with image.canvas.after:
-                    bordersize=0
-                    Color(1, 0, 0, .5, mode='rgba')
-                    BorderImage(source=currentDir+'out/cards_04.png',
-                                border = (1,1,1,1),
-                                size = image.size,
-                                pos = image.pos)
+                    bordersize=10
+                    Color(1, 1, 1, 1, mode='rgba')
+                    BorderImage(source=currentDir+'border.png',
+                                border = (bordersize,bordersize,bordersize,bordersize),
+                                size = (self.image.width+(bordersize*2), self.image.height+(bordersize*2)),
+                                pos = (-bordersize,-bordersize))
 
-                    #Color(1, 0, 0, .5, mode='rgba')
-                    #Rectangle(pos=card.scatter.pos, size=card.scatter.size)
-                    #card.highlight = BorderImage(source=currentDir+'nuclear bomb.jpg',
-                    #                                   border = (15, 16, 64, 16),
-                    #                                   size = card.image.size)
         else:
             self.scatter.clickable=False
             image.canvas.after.clear()
