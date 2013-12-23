@@ -1,37 +1,38 @@
 
-list,enemySoldiers0,5,78
-list,enemySoldiers1,15,78
-list,enemySoldiers2,25,78
-list,enemySoldiers3,35,78
-list,enemySoldiers4,45,78
-list,enemyStock,68,78
-list,enemyDiscard,80,78
+list,enemySoldiers0,2,78,0.16
+list,enemySoldiers1,11,78,0.16
+list,enemySoldiers2,20,78,0.16
+list,enemySoldiers3,29,78,0.16
+list,enemySoldiers4,38,78,0.16
 
-playerlist,playerSoldiers0,5,48
-playerlist,playerSoldiers1,15,48
-playerlist,playerSoldiers2,25,48
-playerlist,playerSoldiers3,35,48
-playerlist,playerSoldiers4,45,48
+list,enemyStock,77,78,0.1
+list,enemyDiscard,86,78,0.1
 
-playerlist,playerWorkers0,5,26
-playerlist,playerWorkers1,15,26
-playerlist,playerWorkers2,25,26
-playerlist,playerWorkers3,35,26
-playerlist,playerWorkers4,45,26
+playerlist,playerSoldiers0,2,48,0.16
+playerlist,playerSoldiers1,11,48,0.16
+playerlist,playerSoldiers2,20,48,0.16
+playerlist,playerSoldiers3,29,48,0.16
+playerlist,playerSoldiers4,38,48,0.16
 
-playerlist,playerBase0,550,250
-playerlist,playerBase1,650,250
-playerlist,playerBase2,550,150
-playerlist,playerBase3,650,150
-playerlist,playerBase4,550,50
+playerlist,playerWorkers0,2,26,0.16
+playerlist,playerWorkers1,11,26,0.16
+playerlist,playerWorkers2,20,26,0.16
+playerlist,playerWorkers3,29,26,0.16
+playerlist,playerWorkers4,38,26,0.16
 
-playerlist,playerScrap,60,3
-playerlist,playerHand,5,3
+playerlist,playerBase0,50,26,0.16
+playerlist,playerBase1,59,26,0.16
+playerlist,playerBase2,68,26,0.16
+playerlist,playerBase3,77,26,0.16
+playerlist,playerBase4,86,26,0.16
 
-list,playerStock,68,30
-list,playerDiscard,80,30
+playerlist,playerScrap,60,3,0.16
+playerlist,playerHand,2,3,0.2
 
-button,done,65,56
-button,attack,65,56
+list,playerStock,77,48,0.1
+list,playerDiscard,86,48,0.1
 
-playerlabel,playerPoints,650,50
+button,done,59,48,0.1
+button,attack,59,48,0.1
+
+playerlabel,playerPoints,45,48,20sp

@@ -78,10 +78,13 @@ class MyButton(Scatter):
         self.layout=layout
         imagename=currentDir+name+".png"
         self.image = Image(source=imagename, allow_stretch=True, keep_ratio=True)
+        self.image.size= (Window.height*self.image.image_ratio, Window.height)
+
         self.size=self.image.size
-        self.size_hint=(None, None)
+        self.size_hint= (None, None)
+        self.scale = 0.2
+        
         self.add_widget(self.image)
-        self.size=self.image.size
 
     def enable(self, state):
         if state:
@@ -130,6 +133,9 @@ class KivyCard(Card):
             #with selfimage.canvas.before:
             #    Color(1, 0, 0, .5, mode='rgba')
 
+        self.lock = threading.Lock()
+
+
     def highlight(self,highlighting):
         image=self.image
         if self.state==eCardState.turned or self.state==eCardState.good:
@@ -169,26 +175,39 @@ class KivyCard(Card):
             self.scatter.add_widget(self.backImage) 
         
 
-    def setDest(self,x,y,pile,wait):
-        self.dest=[x,y]
+    def setDest(self,x,ypoo,scale,pile,wait):
+        self.lock.acquire()
+        displayLock = DisplayLock()
+        self.dest=[x,ypoo]
+        self.destScale=scale
         self.destPile=pile
+        #self.destLock=lock
         self.has_dest=True
         if self.destPile:
             self.destPile.layout.add_widget(self.scatter)
+            #bring to the front:
             parent = self.destPile.layout.parent
             parent.remove_widget(self.destPile.layout)
             parent.add_widget(self.destPile.layout)
 
-        xdist = abs(self.scatter.pos[0]-x)
-        ydist = abs(self.scatter.pos[1]-y)
+        increment = 2 #0.5
+
+        xdist = abs(self.scatter.x-x)
+        ydist = abs(self.scatter.y-ypoo)
 
         if xdist == 0:  #avoid div by zero
-            self.xmove=0
-            self.ymove = 2 * Window.height / 100
+            #print "XZERO"
+            self.xmove=1
+            self.ymove = increment * Window.height / 100
+        elif ydist == 0:
+            #print "YZERO"
+            self.xmove= increment * Window.height / 100
+            self.ymove = 1
         else:
+            #print "DIST "+str(xdist)+" "+str(ydist)
             theta = math.atan(ydist/xdist)
-            self.xmove = 2 * math.cos(theta) * Window.height / 100
-            self.ymove = 2 * math.sin(theta) * Window.height / 100
+            self.xmove = increment * math.cos(theta) * Window.height / 100
+            self.ymove = increment * math.sin(theta) * Window.height / 100
 
         if not self.cb:
             with self.scatter.canvas:
@@ -203,8 +222,8 @@ class KivyCard(Card):
     def destCallback(self, instr):
         if self.has_dest:
             #increment=10
-            posx=self.scatter.pos[0]
-            posy=self.scatter.pos[1]
+            posx=self.scatter.x
+            posy=self.scatter.y
             if posx < self.dest[0]:
                 posx = min(posx+self.xmove,self.dest[0])
             elif posx > self.dest[0]:
@@ -214,10 +233,20 @@ class KivyCard(Card):
             elif posy > self.dest[1]:
                 posy = max(posy-self.ymove,self.dest[1])      
             self.scatter.pos=(posx,posy)
-            if posx == self.dest[0] and posy == self.dest[1]:
-                self.has_dest=False
+
+            if self.scatter.scale < self.destScale:
+                self.scatter.scale = min(self.scatter.scale+0.004,self.destScale)
+            elif self.scatter.scale > self.destScale:
+                self.scatter.scale = max(self.scatter.scale-0.004,self.destScale)
+
+            if int(posx) == int(self.dest[0]) and int(posy) == int(self.dest[1]):
+                self.scatter.scale = self.destScale
+                self.scatter.pos=(int(posx),int(posy))
                 if self.destPile:
                     self.destPile.updateDisplay()
+                #DO THESE LAST...
+                self.has_dest=False
+                self.lock.release()
             ##TODO REMOVE CALLBACL WHEN REACHED!!!!
             #print "callback"
 
@@ -232,11 +261,13 @@ class KivyCardCounter(CardCounter):
         super(KivyCardCounter,self).__init__(name, player, value, *args)
         self.displayed=False
 
-    def initDisplay(self,xpos,ypos,parentlayout):
+    def initDisplay(self,xpos,ypos,fontsize,parentlayout):
         self.displayed=True
         self.xpos=xpos
         self.ypos=ypos
-        self.label= Label(text="{0}".format(self.value()))
+        self.label= Label(text="{0}".format(self.value()), font_size=fontsize)
+        self.label.pos=(xpos,ypos)
+        print self.label.pos
         parentlayout.add_widget(self.label)
 
     def incValue(self,value):
@@ -249,11 +280,13 @@ class KivyCardList(CardList):
     def __init__(self, name, player):
         super(KivyCardList,self).__init__(name, player)
         self.displayed=False
+        self.lock = threading.Lock()
 
-    def initDisplay(self,xpos,ypos,parentlayout):
+    def initDisplay(self,xpos,ypos,scale,parentlayout):
         self.displayed=True
         self.xpos=xpos
         self.ypos=ypos
+        self.scale=scale
         self.layout= RelativeLayout()
         parentlayout.add_widget(self.layout)
         #self.ipos=(card.image.width*card.scatter.scale)
@@ -263,6 +296,7 @@ class KivyCardList(CardList):
         self.layout.clear_widgets()
         offset=0
         for card in self:
+            card.scatter.scale=self.scale
             card.scatter.pos=(self.xpos+offset,self.ypos)
             self.layout.add_widget(card.scatter)
             offset=offset+(card.image.width*card.scatter.scale*0.6)
@@ -280,10 +314,11 @@ class KivyCardList(CardList):
                 offset=offset+(card.image.width*card.scatter.scale*0.6)
 
     def append(self,card):
+        #self.lock.acquire()
         super(KivyCardList,self).append(card)
         if self.displayed:
             offset=(len(self)-1)*(card.image.width*card.scatter.scale*0.6)
-            card.setDest(self.xpos+offset,self.ypos,self,True)
+            card.setDest(self.xpos+offset,self.ypos,self.scale,self,True)
             
 
 
@@ -292,11 +327,13 @@ class KivyCardPile(CardPile):
     def __init__(self, name, player):
         super(KivyCardPile,self).__init__(name, player)
         self.displayed=False
+        self.lock = threading.Lock()
         
-    def initDisplay(self,xpos,ypos,parentlayout):
+    def initDisplay(self,xpos,ypos,scale,parentlayout):
         self.displayed=True
         self.xpos=xpos
         self.ypos=ypos
+        self.scale=scale
         self.layout= RelativeLayout()
         parentlayout.add_widget(self.layout)
         self.updateDisplay()
@@ -308,9 +345,11 @@ class KivyCardPile(CardPile):
         if card.state == eCardState.good:
             offset=10
             card2=self.peekpeek()
+            card2.scatter.scale=self.scale
             card2.scatter.pos=(self.xpos,self.ypos)
             self.layout.add_widget(card2.scatter)
             
+        card.scatter.scale=self.scale
         card.scatter.pos=(self.xpos+offset,self.ypos-offset)
         self.layout.add_widget(card.scatter)
 
@@ -319,17 +358,19 @@ class KivyCardPile(CardPile):
             #Display the card underneath (the next top one)
             self.layout.clear_widgets()
             card=self.peekpeek()
+            card.scatter.scale=self.scale
             card.scatter.pos=(self.xpos,self.ypos)
             self.layout.add_widget(card.scatter)
         super(KivyCardPile,self).dealCard(newCardList,newState)
 
     def append(self,card):
+        #self.lock.acquire()
         super(KivyCardPile,self).append(card)
         offset=0
         if card.state == eCardState.good:
             offset=10
         if self.displayed:
-            card.setDest(self.xpos+offset,self.ypos-offset,self,True)
+            card.setDest(self.xpos+offset,self.ypos-offset,self.scale,self,True)
 
 
 
@@ -369,7 +410,7 @@ class MyApp(App):
                 i=row.rstrip('\n')
                 j=i.rstrip('\r')
                 k=j.split(",")
-                if len(k)==4:
+                if len(k)==5:
                     self.layout.append(j.split(","))
 
 
@@ -433,37 +474,38 @@ class MyApp(App):
     def initDisplay(self):
         if self.on:
             #print self.layout
-            for [ltype,data,xpos,ypos] in self.layout:
+            for [ltype,data,xpos,ypos,scale] in self.layout:
 
                 if ltype=="list":
                     for l in self.lists:
                         if l.name==data:
-                            l.initDisplay(Window.width*float(xpos)/100,
-                                          Window.height*float(ypos)/100,
+                            l.initDisplay(int(Window.width*float(xpos)/100),
+                                          int(Window.height*float(ypos)/100),
+                                          float(scale),
                                           self.relativeLayout)
                             
                 elif ltype=="playerlist":
                     for l in self.lists:
                         if l.name==data and l.player==self.playerList.playerNumber:
-                            l.initDisplay(Window.width*float(xpos)/100,
-                                          Window.height*float(ypos)/100,
+                            l.initDisplay(int(Window.width*float(xpos)/100),
+                                          int(Window.height*float(ypos)/100),
+                                          float(scale),
                                           self.relativeLayout)
                             break
                         
                 elif ltype=="button":
                     button = MyButton(data,self.relativeLayout)
+                    button.scale = float(scale)
                     button.pos=(Window.width*float(xpos)/100,
                                 Window.height*float(ypos)/100)
                     self.buttons[data]=button
 
                 elif ltype=="playerlabel":
-                    print "counter1"
                     for l in self.counters:
-                        print l.name
                         if l.name==data and l.player==self.playerList.playerNumber:
-                            print "DO COUNTER"
-                            l.initDisplay(float(xpos),
-                                          float(ypos),
+                            l.initDisplay(int(Window.width*float(xpos)/100),
+                                          int(Window.height*float(ypos)/100),
+                                          scale,
                                           self.relativeLayout)
                             break
                     
@@ -698,7 +740,7 @@ class MyApp(App):
 
         if card1.actualSpeed > card2.actualSpeed:
             
-            card1.setDest(card1.scatter.pos[0],card1.scatter.pos[1]-100,False,True)
+            card1.setDest(card1.scatter.pos[0],card1.scatter.pos[1]-100,card1.scatter.scale,False,True)
             
             if card1.actualAttack >= card2.actualDefense:
                 card2.setState(eCardState.dead)
@@ -708,11 +750,11 @@ class MyApp(App):
                 card1.setState(eCardState.dead)
                 card1Survive=False
 
-            card1.setDest(card1.scatter.pos[0],card1.scatter.pos[1]+100,False,True)
+            card1.setDest(card1.scatter.pos[0],card1.scatter.pos[1]+100,card1.scatter.scale,False,True)
                 
         elif card2.actualSpeed > card1.actualSpeed:
 
-            card2.setDest(card2.scatter.pos[0],card2.scatter.pos[1]+100,False,True)
+            card2.setDest(card2.scatter.pos[0],card2.scatter.pos[1]+100,card2.scatter.scale,False,True)
 
             if card2.actualAttack >= card1.actualDefense:
                 card1.setState(eCardState.dead)
@@ -722,12 +764,12 @@ class MyApp(App):
                 card2.setState(eCardState.dead)
                 card2Survive=False
 
-            card2.setDest(card2.scatter.pos[0],card2.scatter.pos[1]-100,False,True)
+            card2.setDest(card2.scatter.pos[0],card2.scatter.pos[1]-100,card2.scatter.scale,False,True)
 
         else:
             
-            card1.setDest(card1.scatter.pos[0],card1.scatter.pos[1]-50,False,False)
-            card2.setDest(card2.scatter.pos[0],card2.scatter.pos[1]+50,False,False)
+            card1.setDest(card1.scatter.pos[0],card1.scatter.pos[1]-50,card1.scatter.scale,False,False)
+            card2.setDest(card2.scatter.pos[0],card2.scatter.pos[1]+50,card2.scatter.scale,False,False)
             while card1.has_dest or card2.has_dest:
                 sleep(0)
             
@@ -739,8 +781,8 @@ class MyApp(App):
                 card1.setState(eCardState.dead)
                 card1Survive=False
 
-            card1.setDest(card1.scatter.pos[0],card1.scatter.pos[1]+50,False,False)
-            card2.setDest(card2.scatter.pos[0],card2.scatter.pos[1]-50,False,False)
+            card1.setDest(card1.scatter.pos[0],card1.scatter.pos[1]+50,card1.scatter.scale,False,False)
+            card2.setDest(card2.scatter.pos[0],card2.scatter.pos[1]-50,card2.scatter.scale,False,False)
             while card1.has_dest or card2.has_dest:
                 sleep(0)
 
