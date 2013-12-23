@@ -221,7 +221,7 @@ class KivyCard(Card):
 
     def destCallback(self, instr):
         if self.has_dest:
-            #increment=10
+
             posx=self.scatter.x
             posy=self.scatter.y
             if posx < self.dest[0]:
@@ -317,7 +317,7 @@ class KivyCardList(CardList):
         #self.lock.acquire()
         super(KivyCardList,self).append(card)
         if self.displayed:
-            offset=(len(self)-1)*(card.image.width*card.scatter.scale*0.6)
+            offset=(len(self)-1)*(card.image.width*self.scale*0.6)
             card.setDest(self.xpos+offset,self.ypos,self.scale,self,True)
             
 
