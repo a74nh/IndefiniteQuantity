@@ -30,6 +30,12 @@ currentDir=""
 #c:\Users\Alan\Desktop\RobotEmpire\\"
 
 
+################################################################################
+#
+# DisplayLock
+#
+# Wrapper class for a lock. Passes a card in when unlocking
+#
 class DisplayLock(object):
 
     def __init__(self):
@@ -51,6 +57,12 @@ class DisplayLock(object):
         self.release()
 
 
+################################################################################
+#
+# CardScatter
+#
+# Wrapper class for a scatter to capture input presses
+#
 class CardScatter(ScatterLayout):
 
     pressed = ListProperty([0, 0])
@@ -66,6 +78,12 @@ class CardScatter(ScatterLayout):
         return super(CardScatter, self).on_touch_down(touch)
 
 
+################################################################################
+#
+# MyButton
+#
+# Wrapper class for a button
+#
 class MyButton(Scatter):
 
     pressed = ListProperty([0, 0])
@@ -105,9 +123,11 @@ class MyButton(Scatter):
         return super(MyButton, self).on_touch_down(touch)
 
 
-
+################################################################################
 #
-#Represents a card
+# KivyCard
+#
+# Kivy extentions for a card
 #    
 class KivyCard(Card):
     def __init__(self,number,name,suite,ctype,cost,attack,defense,speed,scrap,upkeep,comments):
@@ -141,12 +161,15 @@ class KivyCard(Card):
 
 
     def highlight(self,highlighting):
+        #WARNING: clears select state
         image=self.image
         if self.state==eCardState.turned or self.state==eCardState.good:
             image=self.backImage
-            
+
+        self.scatter.clickable=highlighting
+        image.canvas.after.clear()
+        
         if highlighting:
-            self.scatter.clickable=True
             with image.canvas.after:
                     bordersize=10
                     Color(1, 1, 1, 1, mode='rgba')
@@ -154,10 +177,25 @@ class KivyCard(Card):
                                 border = (bordersize,bordersize,bordersize,bordersize),
                                 size = (self.image.width+(bordersize*2), self.image.height+(bordersize*2)),
                                 pos = (-bordersize,-bordersize))
+            
+    def select(self,selected):
+        #WARNING: clears highlight state
+        image=self.image
+        if self.state==eCardState.turned or self.state==eCardState.good:
+            image=self.backImage
+            
+        self.scatter.clickable=False
+        image.canvas.after.clear()
+        
+        if selected:
+            with image.canvas.after:
+                    bordersize=10
+                    Color(1, 0, 0, 1, mode='rgba')
+                    BorderImage(source=currentDir+'border.png',
+                                border = (bordersize,bordersize,bordersize,bordersize),
+                                size = (self.image.width+(bordersize*2), self.image.height+(bordersize*2)),
+                                pos = (-bordersize,-bordersize))
 
-        else:
-            self.scatter.clickable=False
-            image.canvas.after.clear()
 
     def setState(self,state):
         if self.state==eCardState.turned or self.state==eCardState.good:
@@ -254,6 +292,12 @@ class KivyCard(Card):
         displayLock.release(self)
 
 
+################################################################################
+#
+# KivyCardCounter
+#
+# Kivy extentions for a CardCounter
+#   
 class KivyCardCounter(CardCounter):
 
     def __init__(self, name, player, value, *args):
@@ -273,6 +317,12 @@ class KivyCardCounter(CardCounter):
         self.label.text="{0}".format(self.value())
 
 
+################################################################################
+#
+# KivyCardList
+#
+# Kivy extentions for a CardList
+#  
 class KivyCardList(CardList):
 
     def __init__(self, name, player):
@@ -313,13 +363,19 @@ class KivyCardList(CardList):
 
     def append(self,card):
         #self.lock.acquire()
+        print card
         super(KivyCardList,self).append(card)
         if self.displayed:
             offset=(len(self)-1)*(card.image.width*self.scale*0.6)
             card.setDest(self.xpos+offset,self.ypos,self.scale,self,True)
             
 
-
+################################################################################
+#
+# KivyCardPile
+#
+# Kivy extentions for a CardPile
+#  
 class KivyCardPile(CardPile):
 
     def __init__(self, name, player):
@@ -363,6 +419,7 @@ class KivyCardPile(CardPile):
 
     def append(self,card):
         #self.lock.acquire()
+        print card
         super(KivyCardPile,self).append(card)
         offset=0
         if card.state == eCardState.good:
@@ -371,7 +428,12 @@ class KivyCardPile(CardPile):
             card.setDest(self.xpos+offset,self.ypos-offset,self.scale,self,True)
 
 
-
+################################################################################
+#
+# EngineThread
+#
+# Main thread, just calls into the engine
+#  
 class EngineThread(Thread):
 
     def __init__(self,engine):
@@ -383,6 +445,12 @@ class EngineThread(Thread):
             self.engine.run()
 
 
+################################################################################
+#
+# MyApp
+#
+# Main app class. Acts as a Display class
+# 
 class MyApp(App):
 
     def build(self):
@@ -533,7 +601,7 @@ class MyApp(App):
 
             (cardList,card,index)=picked
             card.playable=ePlayable.none
-            card.highlight(False)
+            card.select(True)
 
             pickedTuples.append(picked)
 
@@ -541,6 +609,7 @@ class MyApp(App):
         #reset all the playable-ness
         for (cardList,card,cardIndex) in pickableFrom:
             card.playable=ePlayable.none
+            card.highlight(False)
 
         if len(pickedTuples)>0:
             pickedTuples2=[]
@@ -564,8 +633,8 @@ class MyApp(App):
     def userPickCost(self,pickableFrom,price,moveTo):
         pickedTuples=[]
         pickedCards=[]
-
         pickedCost=0
+        
         while pickedCost<price:
             str="Pay with {0} cards ".format(price-pickedCost)
             picked=self.pickCard(pickableFrom,
@@ -580,7 +649,7 @@ class MyApp(App):
             
             (cardList,card,index)=picked
             card.playable=ePlayable.none
-            card.highlight(False)
+            card.select(True)
 
             pickedCost=pickedCost+card.playableCost
 
@@ -639,6 +708,8 @@ class MyApp(App):
             #if card != cardPicked:
             card.highlight(False)
             #card.playable=ePlayable.none
+
+        cardPicked.select(True)
             
         pickedTo=self.pickCard(pickableFrom,
                                "Pick position to put {0} to {1} or (c) to cancel",
@@ -651,6 +722,7 @@ class MyApp(App):
         for (cardList,card,cardIndex) in pickableFrom:
             card.playable=ePlayable.none
             card.highlight(False)
+        cardPicked.select(False)
 
         if pickedTo == ePlayable.cancel:
             return (ePlayable.cancel,False,False)
@@ -799,8 +871,10 @@ class MyApp(App):
         return (card1Survive,card2Survive)
 
 
-
-
+################################################################################
+#
+# Main script
+# 
 if __name__ == '__main__': 
 
     MyApp().run()

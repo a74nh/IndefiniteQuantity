@@ -56,7 +56,7 @@ single,num,name,type,cost,attack,defense,speed,aglity,scrap,upkeep,comments
 1,4,Obsidian Statue,soldier,3,1,6,3,3,3,0,"Avoids void upkeep."
 1,2,Time shifter,soldier,4,3,3,3,3,3,0,"Additional attack at end of phase"
 1,1,Living Nightmare,soldier,8,9,1,5,3,5,0,"Tears the void. +1 void upkeep. Attack phase: -3 attack to all non-void creatures"
-1,1,Galatic Memory,soldier,12,12,12,8,8,10,0,"Upkeep: End of phase, send all other creatures to the void."
+1,1,Galatic Memory,soldier,12,12,12,8,8,10,0,"Upkeep: End of phase send all other creatures to the void."
 1,2,Stasis Chamber,facility,3,0,0,0,0,0,0,"Choose soldier to avoid upkeep cost. On death choose another"
 1,2,Stealth Engine,facility,2,0,0,0,0,0,0,"+2 ship aglity"
 1,3,Time Neutraliser,instant,2,0,0,0,0,0,0,"Return everything on the battlefield to the hand."

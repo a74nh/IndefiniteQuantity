@@ -2,7 +2,12 @@ from enums import *
 from upkeep import *
 
 
-               
+################################################################################
+#
+# PlayerCardLists
+#
+# All the cards belonging to a player
+#               
 class PlayerCardLists(object):
     def __init__(self,playerNumber,suite,CardPile,CardList,CardCounter):
         self.playerNumber=playerNumber
@@ -24,7 +29,9 @@ class PlayerCardLists(object):
             
 
 
-
+################################################################################
+#
+# Tableau
 #
 # Current layout of the game
 # Holds the various lists of cards
@@ -298,7 +305,9 @@ class Tableau(object):
     
 
 
-
+################################################################################
+#
+# GameEngine
 #
 # Runs the game
 #

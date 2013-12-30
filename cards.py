@@ -234,6 +234,8 @@ class Deck(object):
                     for cardLine in cardsfile:
                         cardrow=cardLine.split(",")
                         if len(cardrow) != 12:
+                            print "INVALID ROW {0} vs 12".format(len(cardrow))
+                            print cardrow
                             continue
                         single,instances,name,ctype,cost,attack,defense,speed,aglity,scrap,upkeep,comments = cardrow
                         instances=int(instances)
