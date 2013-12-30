@@ -301,8 +301,15 @@ class Tableau(object):
         self.__history.append({'action': 'attack', 'arg1': enemyCard,
                                                    'arg2': playerCard})
 
-        
-    
+
+    def invade(self,nextEngineStage,invaderPile,victimPile,moveTo):
+        self.__setStage(nextEngineStage)
+        self.display.invade(invaderPile,victimPile,moveTo)
+
+        #TODO FIX
+        self.__history.append({'action': 'invade', 'arg1': invaderPile,
+                                                   'arg2': victimPile,      
+                                                   'arg3': moveTo})
 
 
 ################################################################################
@@ -606,7 +613,7 @@ class GameEngine(object):
 
         playerSoldierPile=playerLists.soldiers[self.tableau.lootPhase]
         playerSoldier=playerSoldierPile.peek()
-        playerWorker=playerLists.workers[self.tableau.lootPhase].peek()
+        playerWorkerPile=playerLists.workers[self.tableau.lootPhase]
         enemySoldierPile=self.tableau.enemySoldiers[self.tableau.lootPhase]
         enemySoldier=enemySoldierPile.peek()
         
@@ -617,36 +624,30 @@ class GameEngine(object):
         #update player soldier    
         playerSoldier=playerLists.soldiers[self.tableau.lootPhase].peek()
 
-        if ( playerSoldier.isBlank() and (not playerWorker.isBlank())
-                                     and (not enemySoldier.isBlank())
-                                     and (not enemySoldier.state==eCardState.dead) ):
-            print("move worker to discard")
-            oldx=enemySoldier.scatter.x
-            oldy=enemySoldier.scatter.y
+        if (not enemySoldier.isBlank()) and (not enemySoldier.state==eCardState.dead) and (playerSoldier.isBlank()):
 
-            print playerSoldier.scatter.x
-            print playerSoldier.scatter.y
-            enemySoldier.setDest(playerWorker.scatter.x,playerWorker.scatter.y,enemySoldier.scatter.scale,False,True)
+            playerLists.points.incValue(-1)
 
-            print("move worker to discard2")
-
-            playerLists.workers[self.tableau.lootPhase].dealCard(self.tableau.playerDiscard,eCardState.normal)
-
-            print("move worker to discard3")
-
-            enemySoldier.setDest(oldx,oldy,enemySoldier.scatter.scale,False,True)
-        
+            self.tableau.invade(eEngineStages.collectSetup,
+                                enemySoldierPile,
+                                playerWorkerPile,
+                                self.tableau.playerDiscard)
+            return
             
         if not enemySoldier.isBlank() and enemySoldier.state==eCardState.dead:
 
             if not playerSoldier.isBlank():
                 print("collect scrap")
-                enemySoldierPile.dealCard(playerLists.scrap,eCardState.normal)
+                self.tableau.invade(eEngineStages.collectSetup,
+                                    playerSoldierPile,
+                                    enemySoldierPile,
+                                    playerLists.scrap)
+                return
+                
             else:
                 print("move dead card to discard")
                 enemySoldierPile.dealCard(self.tableau.enemyDiscard,eCardState.normal)
                 
-        print(playerLists.scrap)
         self.tableau.null(eEngineStages.collectSetup)
 
 

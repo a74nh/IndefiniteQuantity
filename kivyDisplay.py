@@ -871,6 +871,26 @@ class MyApp(App):
         return (card1Survive,card2Survive)
 
 
+    def invade(self,invaderPile,victimPile,moveTo):
+
+        invader = invaderPile.peek()
+        victim = victimPile.peek()
+
+        oldx=invader.scatter.x
+        oldy=invader.scatter.y
+        
+        invader.setDest(victim.scatter.pos[0],victim.scatter.pos[1],victim.scatter.scale,False,True)
+
+        if not victim.isBlank(): 
+            victim.setState(eCardState.dead)
+
+        invader.setDest(oldx,oldy,invader.scatter.scale,False,True)
+
+        if not victim.isBlank(): 
+            victimPile.dealCard(moveTo,eCardState.normal)
+        
+
+
 ################################################################################
 #
 # Main script

@@ -3,8 +3,12 @@ import random
 
 from enums import *
 
+
+################################################################################
 #
-#Represents a card suite
+# Suite
+#
+# Represents a card suite
 #
 class Suite(object):
     def __init__(self, name, upkeep):
@@ -17,8 +21,12 @@ class Suite(object):
     def __repr__(self):
         return self.__str__()
 
+
+################################################################################
 #
-#Represents a card
+# Card
+#
+# Represents a card
 #    
 class Card(object):
     def __init__(self,number,name,suite,ctype,cost,attack,defense,speed,scrap,upkeep,comments):
@@ -80,7 +88,12 @@ class Card(object):
         self.state=state
 
 
-
+################################################################################
+#
+# CardCounter
+#
+# Int value
+# 
 class CardCounter(object):
 
     def __init__(self, name, player, value, *args):
@@ -101,6 +114,9 @@ class CardCounter(object):
         self.__value=self.__value+value
 
 
+################################################################################
+#
+# CardList
 #
 # Overrides list to provide display updates each time something changes.
 # Class must be statically initialised with a display class
@@ -146,7 +162,12 @@ class CardList(list):
 ##        super(CardList,self).append(card)
 ##        card.pile=self
 
+
+################################################################################
 #
+# CardPile
+#
+# Like a CardList, but works more like a stack
 #
 class CardPile(object):
     
@@ -202,7 +223,9 @@ class CardPile(object):
 
         
 
-
+################################################################################
+#
+# Deck
 #
 # Loads in a full set of cards into a single list
 #
