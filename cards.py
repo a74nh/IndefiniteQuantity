@@ -1,23 +1,7 @@
 #import csv
 import random
 
-
-def enum(*sequential, **named):
-    enums = dict(zip(sequential, range(len(sequential))), **named)
-    reverse = dict((value, key) for key, value in enums.items())
-    enums['reverse_mapping'] = reverse
-    return type('Enum', (), enums)
-
-
-ePlayable = enum("none","pfrom1","pto1","pfrom2","pto2","single","cost","cancel","done")
-
-eOrder = enum("first","second","both","neither")
-
-eCardTypes = enum("space","worker","soldier","facility","instant","cover","factory")
-
-eSuiteNames = enum("Blank","Socialist Union Republic Army","Nuclear Bodgers","Insectoids","Void")
-
-eCardState = enum("normal","dead","turned","good")
+from enums import *
 
 #
 #Represents a card suite
@@ -239,7 +223,8 @@ class Deck(object):
                 cardNum=1
                 for suiteLine in suitesfile:
                     suiterow=suiteLine.split(",")
-                    suite=Suite(getattr(eSuiteNames,suiterow[2]), suiterow[5])
+                    s_num,s_num2,s_name,_s_colour1,s_colour2,s_upkeep = suiterow
+                    suite=Suite(getattr(eSuiteNames,s_name), s_upkeep.rstrip())
                     if suite.name == eSuiteNames.Blank:
                         self.blankSuite = suite
                     else:
@@ -258,7 +243,7 @@ class Deck(object):
                             self.cards.append(card)
                             #print(card)
                         cardNum=cardNum+1
-                        if count >= int(suiterow[1]):
+                        if count >= int(s_num2):
                             break
                         
         random.shuffle(self.cards)

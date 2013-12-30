@@ -29,11 +29,14 @@ playerlist,playerBase4,86,26,0.16
 playerlist,playerScrap,60,3,0.16
 playerlist,playerHand,2,3,0.2
 
+playerlist,playerFactory,86,60,0.16
+
 list,playerStock,77,48,0.1
 list,playerDiscard,86,48,0.1
 
-button,done,59,48,0.1
-button,attack,59,48,0.1
+button,done,59,48,0.07
+button,cancel,55,48,0.07
+button,attack,59,48,0.07
 
 button,upkeep_phase,59,60,0.1
 button,build_phase,59,60,0.1

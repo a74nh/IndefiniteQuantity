@@ -250,7 +250,7 @@ class KivyCard(Card):
             #print "callback"
 
     def clicked(self, instance, pos):
-        print ('pos: printed from root widget: {pos}'.format(pos=pos))
+        print ('Card selected: printed from root widget: {pos}'.format(pos=pos))
         displayLock.release(self)
 
 
@@ -381,7 +381,6 @@ class EngineThread(Thread):
     def run(self):
         while 1:
             self.engine.run()
-            print(self.engine.phase)
 
 
 class MyApp(App):
@@ -574,10 +573,11 @@ class MyApp(App):
                                  (ePlayable.cost,),
                                  False,True)
 
-            if picked == ePlayable.cancel:
+            if picked == ePlayable.cancel or picked == ePlayable.none:
+                #Full selection could not be chosen, so clear everything chosen so far
                 pickedCards=[]
                 break
-
+            
             (cardList,card,index)=picked
             card.playable=ePlayable.none
             card.highlight(False)
@@ -614,7 +614,7 @@ class MyApp(App):
     def userPickSingle(self,pickableFrom):
 
         picked=self.pickCard(pickableFrom,
-                             "Pick a card to play {0} to {1} or (d) for done",
+                             "Pick a single card to play {0} to {1} or (d) for done",
                              (ePlayable.single,ePlayable.pfrom1,ePlayable.pfrom2),
                              True,False)
 
@@ -636,8 +636,9 @@ class MyApp(App):
 
 
         for (cardList,card,cardIndex) in pickableFrom:
-            if card != cardPicked:
-                card.highlight(False)
+            #if card != cardPicked:
+            card.highlight(False)
+            #card.playable=ePlayable.none
             
         pickedTo=self.pickCard(pickableFrom,
                                "Pick position to put {0} to {1} or (c) to cancel",
@@ -674,7 +675,7 @@ class MyApp(App):
         pickCount=[]
 
         if len(picklist)==0:
-            return False
+            return ePlayable.none
         
         pickCard=[]
 
@@ -690,26 +691,34 @@ class MyApp(App):
 
         if allowDone:
             self.buttons["done"].enable(True)
-        
-        while [ 1 ]:
 
+        if allowCancel:
+            self.buttons["cancel"].enable(True)
+            
+        while [ 1 ]:
             print (printString+": ").format(1,index-1)
 
+            returnValue=False
             displayLock.acquire()
 
             if type(displayLock.card) == KivyCard:
                 for pick in picklist:
                     (cardList,card,cardIndex) = pick
                     if card == displayLock.card :
-                        displayLock.release(False)
-                        if allowDone:
-                            self.buttons["done"].enable(False)
-                        return pick
-            elif type(displayLock.card) == MyButton and allowDone:
-                if displayLock.card.name == "done":
-                    displayLock.release(False)
-                    self.buttons["done"].enable(False)
-                    return ePlayable.done
+                        returnValue = pick
+                        break
+            elif type(displayLock.card) == MyButton:
+                if displayLock.card.name == "done" and allowDone:
+                    returnValue = ePlayable.done
+                elif displayLock.card.name == "cancel" and allowCancel:
+                    returnValue = ePlayable.cancel
+
+            if returnValue != False:
+                displayLock.release(False)
+                self.buttons["done"].enable(False)
+                self.buttons["cancel"].enable(False)
+                return returnValue
+                
         
     def moveCardTo(self,card,cardList):
         cardList.append(card)

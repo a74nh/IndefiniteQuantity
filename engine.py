@@ -1,19 +1,7 @@
-from cards import enum
-from cards import ePlayable
-from cards import eOrder
-from cards import eCardTypes
-from cards import eSuiteNames
-from cards import eCardState
+from enums import *
+from upkeep import *
 
-eEngineStages = enum("upkeepInit","upkeep","enemyDealInit","enemyDeal","enemyDealCheck",
-                     "playerDealInit","playerDeal",
-                     "buildInit","buildSetup","buildCost","buildFinal",
-                     "attackInit","attackSetup","attack","attackAfter",
-                     "collectInit","collectSetup",
-                     "produceInit","produce","produceSell","produceSold","produceDeal",
-                     "nextPlayer")
 
-ePhases = enum("upkeep","build","attack","collect","produce")
                
 class PlayerCardLists(object):
     def __init__(self,playerNumber,suite,CardPile,CardList,CardCounter):
@@ -25,6 +13,7 @@ class PlayerCardLists(object):
         self.hand=CardList("playerHand",playerNumber)
         self.spareWorkers=CardPile("playerSpareWorkers",playerNumber)
         self.scrap=CardList("playerScrap",playerNumber)
+        self.factory=CardPile("playerFactory",playerNumber)
         self.workers=[]
         self.soldiers=[]
         self.base=[]
@@ -59,6 +48,7 @@ class Tableau(object):
         self.playerStock= CardPile("playerStock",0)
         self.enemySoldiers=[]
         self.enemyDiscard=CardPile("enemyDiscard",0)
+        self.enemyFactory = CardPile("enemyFactory",0)
         self.__playerLists=[]
         for x in range(numberPlayers):
             self.__playerLists.append(PlayerCardLists(x+1,deck.suites[x+1],CardPile,CardList,CardCounter))
@@ -75,7 +65,9 @@ class Tableau(object):
                 elif card.name=="stock":
                     stockBlanks.append(card)
             elif card.suite.name == self.enemysuite.name:
-                if card.ctype != eCardTypes.factory and card.ctype != eCardTypes.cover and card.ctype != eCardTypes.worker:
+                if card.ctype == eCardTypes.factory:
+                    self.enemyFactory.append(card)
+                elif card.ctype != eCardTypes.cover and card.ctype != eCardTypes.worker:
                     self.enemyStock.append(card)
                     card.setState(eCardState.turned)
             else:              
@@ -84,7 +76,12 @@ class Tableau(object):
                         if card.suite.name == p.suite.name:
                             p.spareWorkers.append(card)
                             break
-                elif card.ctype != eCardTypes.factory and card.ctype != eCardTypes.cover:
+                elif card.ctype == eCardTypes.factory:
+                    for p in self.__playerLists:
+                        if card.suite.name == p.suite.name:
+                            p.factory.append(card)
+                            break
+                elif card.ctype != eCardTypes.cover:
                     self.playerStock.append(card)
                     card.setState(eCardState.turned)
 
@@ -105,6 +102,7 @@ class Tableau(object):
         self.__player=-1
         self.__engineStage=-1
         self.__nextEngineStage=0
+        self.upkeepPhase=-1
         self.attackPhase=-1
         self.playerDealPhase=0
         self.__history=[]
@@ -314,6 +312,8 @@ class GameEngine(object):
         self.tableau.setPlayer(eEngineStages.upkeepInit,1)
         #self.display.turnOn()
 
+        self.upkeeps = Upkeep(tableau)
+
 
     def run(self):
         phase=self.tableau.nextEngineStage()
@@ -325,7 +325,32 @@ class GameEngine(object):
 
 
     def upkeep(self,playerLists):
-        self.tableau.null(eEngineStages.enemyDeal)
+        self.tableau.upkeepPhase=-1
+        self.tableau.null(eEngineStages.upkeepSetup)
+
+
+    def upkeepSetup(self,playerLists):
+        self.tableau.upkeepPhase=self.tableau.upkeepPhase+1
+
+        if self.tableau.upkeepPhase>=5:
+            self.tableau.null(eEngineStages.enemyDeal)
+            return
+
+        cardPile = playerLists.soldiers[self.tableau.upkeepPhase]
+
+        if cardPile.peek().isBlank():
+            self.tableau.null(eEngineStages.upkeepSetup)
+            return
+
+        #getattr(self.upkeeps,"upkeep"+playerLists.suite.upkeep)(playerLists,card)
+        getattr(self.upkeeps,"upkeep"+"Service")(playerLists,cardPile)
+
+                
+    def upkeepReturn(self,playerLists):
+        cardPile = playerLists.soldiers[self.tableau.upkeepPhase]
+
+        #getattr(self.upkeeps,"upkeep"+playerLists.suite.upkeep+"Return")(playerLists)
+        getattr(self.upkeeps,"upkeep"+"Service"+"Return")(playerLists,cardPile)
 
 
     def enemyDeal(self,playerLists):
@@ -346,20 +371,17 @@ class GameEngine(object):
 
             if card.isBlank():
                 maxDeal = maxDeal - 1
-                print "deal 1"
                 self.tableau.dealCard(self.tableau.enemyStock,
                                       self.tableau.enemySoldiers[i],
                                       eCardState.normal)
-                print "deal 2"
+
                 card=self.tableau.enemySoldiers[i].peek()
 
-                print "deal 3"
                 if card.ctype != eCardTypes.soldier:
                     self.tableau.dealCard(self.tableau.enemySoldiers[i],
                                           self.tableau.enemyDiscard,
                                           eCardState.normal)
 
-                print "deal 4"
         self.tableau.null(eEngineStages.playerDeal)
 
 
@@ -374,11 +396,11 @@ class GameEngine(object):
             if self.tableau.playerStock.peek().isBlank():
                 print("PLAYER EMPTY STOCK TO DO")
                 etreterer
-            print "player deal 1"    
+                
             self.tableau.dealCard(self.tableau.playerStock,
                                   playerLists.hand,
                                   eCardState.normal)
-            print "player deal 2"
+
         self.tableau.null(eEngineStages.buildInit)
 
 
