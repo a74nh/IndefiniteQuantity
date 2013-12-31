@@ -104,13 +104,12 @@ class MyButton(Scatter):
         
         self.add_widget(self.image)
 
-    def enable(self, state):
+    def enable(self, state, clickable):
         if state:
             self.layout.add_widget(self)
-            self.clickable=True
         else:
             self.layout.remove_widget(self)
-            self.clickable=False
+        self.clickable=clickable
         
     def on_touch_down(self, touch):
         if self.collide_point(*touch.pos) and self.clickable:
@@ -156,6 +155,7 @@ class KivyCard(Card):
 
         self.highlighted = Image(source=currentDir+'border.png', allow_stretch=True, keep_ratio=True)
         self.highlighted.size= self.image.size
+        self.scatter.pos=(int(Window.width/2),int(-self.image.height))
 
         self.lock = threading.Lock()
 
@@ -212,10 +212,10 @@ class KivyCard(Card):
             self.scatter.add_widget(self.backImage) 
         
 
-    def setDest(self,x,ypoo,scale,pile,wait):
+    def setDest(self,x,y,scale,pile,wait):
         self.lock.acquire()
         displayLock = DisplayLock()
-        self.dest=[x,ypoo]
+        self.dest=[x,y]
         self.destScale=scale
         self.destPile=pile
         #self.destLock=lock
@@ -229,23 +229,25 @@ class KivyCard(Card):
 
         increment = 2 #0.5
 
-        xdist = abs(self.scatter.x-x)
-        ydist = abs(self.scatter.y-ypoo)
+        xdist = abs(int(self.scatter.x-x))
+        ydist = abs(int(self.scatter.y-y))
 
         if xdist == 0:  #avoid div by zero
-            #print "XZERO"
             self.xmove=1
             self.ymove = increment * Window.height / 100
+            print "XZERO y={0}/{1} {2}->{3}".format(self.ymove,ydist,self.scatter.y,y)
         elif ydist == 0:
-            #print "YZERO"
             self.xmove= increment * Window.height / 100
             self.ymove = 1
+            print "YZERO x={0}/{1} {2}->{3}".format(self.xmove,xdist,self.scatter.x,x)
         else:
             #print "DIST "+str(xdist)+" "+str(ydist)
-            theta = math.atan(ydist/xdist)
+            theta = math.atan2(ydist,xdist)
             self.xmove = increment * math.cos(theta) * Window.height / 100
             self.ymove = increment * math.sin(theta) * Window.height / 100
-
+            print "DIST x={0}/{1} {2}->{3} y={4}/{5} {6}->{7}  theta={8} {9}".format(self.xmove,xdist,self.scatter.x,x,
+                                                              self.ymove,ydist,self.scatter.y,y,
+                                                              theta,math.degrees(theta))
         if not self.cb:
             with self.scatter.canvas:
                 self.cb = Callback(self.destCallback)
@@ -278,7 +280,7 @@ class KivyCard(Card):
 
             if int(posx) == int(self.dest[0]) and int(posy) == int(self.dest[1]):
                 self.scatter.scale = self.destScale
-                self.scatter.pos=(int(posx),int(posy))
+                self.scatter.pos=(int(self.dest[0]),int(self.dest[1]))
                 if self.destPile:
                     self.destPile.updateDisplay()
                 #DO THESE LAST...
@@ -347,7 +349,7 @@ class KivyCardList(CardList):
             card.scatter.scale=self.scale
             card.scatter.pos=(self.xpos+offset,self.ypos)
             self.layout.add_widget(card.scatter)
-            offset=offset+(card.image.width*card.scatter.scale*0.6)
+            offset=offset+int(card.image.width*card.scatter.scale*0.6)
 
     def moveFrom(self,index,newCardList,newState):
         if self.displayed:
@@ -359,14 +361,14 @@ class KivyCardList(CardList):
             offset=0
             for card in self:
                 card.scatter.pos=(self.xpos+offset,self.ypos)
-                offset=offset+(card.image.width*card.scatter.scale*0.6)
+                offset=offset+int(card.image.width*card.scatter.scale*0.6)
 
     def append(self,card):
         #self.lock.acquire()
         print card
         super(KivyCardList,self).append(card)
         if self.displayed:
-            offset=(len(self)-1)*(card.image.width*self.scale*0.6)
+            offset=(len(self)-1)*int(card.image.width*self.scale*0.6)
             card.setDest(self.xpos+offset,self.ypos,self.scale,self,True)
             
 
@@ -385,8 +387,8 @@ class KivyCardPile(CardPile):
         
     def initDisplay(self,xpos,ypos,scale,parentlayout):
         self.displayed=True
-        self.xpos=xpos
-        self.ypos=ypos
+        self.xpos=int(xpos)
+        self.ypos=int(ypos)
         self.scale=scale
         self.layout= RelativeLayout()
         parentlayout.add_widget(self.layout)
@@ -404,7 +406,7 @@ class KivyCardPile(CardPile):
             self.layout.add_widget(card2.scatter)
             
         card.scatter.scale=self.scale
-        card.scatter.pos=(self.xpos+offset,self.ypos-offset)
+        card.scatter.pos=(int(self.xpos+offset),int(self.ypos-offset))
         self.layout.add_widget(card.scatter)
 
     def dealCard(self,newCardList,newState):
@@ -529,8 +531,8 @@ class MyApp(App):
     def updatePhase(self,oldphase,newphase):
         self.phase=newphase
         if oldphase != -1:
-            self.buttons[ePhases.reverse_mapping[oldphase]+"_phase"].enable(False)
-        self.buttons[ePhases.reverse_mapping[newphase]+"_phase"].enable(True)
+            self.buttons[ePhases.reverse_mapping[oldphase]+"_phase"].enable(False,False)
+        self.buttons[ePhases.reverse_mapping[newphase]+"_phase"].enable(True,False)
 
     def updatePlayer(self,newplayerList,turn):
         self.playerList=newplayerList
@@ -762,10 +764,10 @@ class MyApp(App):
                 pickCount.append((cardList,card,cardIndex))
 
         if allowDone:
-            self.buttons["done"].enable(True)
+            self.buttons["done"].enable(True,True)
 
         if allowCancel:
-            self.buttons["cancel"].enable(True)
+            self.buttons["cancel"].enable(True,True)
             
         while [ 1 ]:
             print (printString+": ").format(1,index-1)
@@ -787,8 +789,8 @@ class MyApp(App):
 
             if returnValue != False:
                 displayLock.release(False)
-                self.buttons["done"].enable(False)
-                self.buttons["cancel"].enable(False)
+                self.buttons["done"].enable(False,False)
+                self.buttons["cancel"].enable(False,False)
                 return returnValue
                 
         
@@ -807,9 +809,9 @@ class MyApp(App):
         #charval = raw_input("ATTACK [enter]")
 
         displayLock.acquire()
-        self.buttons["attack"].enable(True)
+        self.buttons["attack"].enable(True,True)
         displayLock.acquire()
-        self.buttons["attack"].enable(False)
+        self.buttons["attack"].enable(False,False)
         displayLock.release(False)
 
         card1Survive = True            
