@@ -21,6 +21,7 @@ from kivy.graphics import Callback
 from kivy.config import Config
 from kivy.properties import ListProperty
 from kivy.core.window import Window
+from kivy.clock import Clock
 
 #Config.set('graphics', 'width', '1920')
 #Config.set('graphics', 'height', '1080')
@@ -29,6 +30,9 @@ from kivy.core.window import Window
 currentDir=""
 #c:\Users\Alan\Desktop\RobotEmpire\\"
 
+
+from kivy.config import Config
+Config.set('kivy', 'double_tap_timeout', '5') #< 500 ms between 2 touch ta
 
 ################################################################################
 #
@@ -65,35 +69,71 @@ class DisplayLock(object):
 #
 class CardScatter(ScatterLayout):
 
+    #KivyCard binds this so that kivyCard.clicked() is called
     pressed = ListProperty([0, 0])
 
     clickable = False
-    
+
+##    lock = threading.Lock()
+##    timerValid = False
+##
+##    def my_callback(self,dt):
+##        self.lock.acquire(True)
+##        if self.timerValid:
+##            print "SINGLE", dt
+##        self.timerValid=False
+##        self.lock.release()
+##        
+##    def on_touch_down(self, touch):
+##
+##        if (not self.collide_point(*touch.pos)) or (not self.clickable):
+##            return False
+##
+##        self.lock.acquire(True)
+##
+##        if touch.double_tap_time > 0 and touch.double_tap_time < 1:
+##            print "DOUBLE"
+##            self.timerValid=False
+##            self.lock.release()
+##            #set click
+##        
+##        elif not self.timerValid:
+##            self.timerValid=True
+##            Clock.schedule_once(self.my_callback, 1)
+##            self.lock.release()
+##
+##        else:
+##            self.lock.release()
+##
+##        return super(CardScatter, self).on_touch_down(touch)
+
     def on_touch_down(self, touch):
-        if self.collide_point(*touch.pos) and self.clickable:
-            self.pressed = touch.pos
-            # we consumed the touch. return False here to propagate
-            # the touch further to the children.
-            return True
+        if self.collide_point(*touch.pos):
+            if looking or self.clickable:
+                self.pressed = touch.pos
+                # we consumed the touch. return False here to propagate
+                # the touch further to the children.
+                return True
         return super(CardScatter, self).on_touch_down(touch)
 
 
 ################################################################################
 #
-# MyButton
+# KivyButton
 #
 # Wrapper class for a button
 #
-class MyButton(Scatter):
+class KivyButton(Scatter):
 
-    pressed = ListProperty([0, 0])
+    #pressed = ListProperty([0, 0])
 
     clickable = False
 
-    def __init__(self,name,layout,**kwargs):
-        super(MyButton,self).__init__(**kwargs)
+    def __init__(self,name,layout,clickaction,**kwargs):
+        super(KivyButton,self).__init__(**kwargs)
         self.name=name
         self.layout=layout
+        self.clickaction=clickaction
         imagename=currentDir+name+".png"
         self.image = Image(source=imagename, allow_stretch=True, keep_ratio=True)
         self.image.size= (Window.height*self.image.image_ratio, Window.height)
@@ -113,13 +153,13 @@ class MyButton(Scatter):
         
     def on_touch_down(self, touch):
         if self.collide_point(*touch.pos) and self.clickable:
-            self.pressed = touch.pos
-            # we consumed the touch. return False here to propagate
-            # the touch further to the children.
+            #self.pressed = touch.pos
+
+            #Always consume. Click action checks for looking status
             print ('Hit button {name} at {pos}'.format(name=self.name, pos=touch.pos))
-            displayLock.release(self)
-            return True
-        return super(MyButton, self).on_touch_down(touch)
+            return self.clickaction(self)
+
+        return super(KivyButton, self).on_touch_down(touch)
 
 
 ################################################################################
@@ -141,6 +181,7 @@ class KivyCard(Card):
         self.scatter.size_hint= (None, None)
         self.scatter.scale = 0.2
         self.scatter.do_translation = False
+        self.scatter.auto_bring_to_front = False
         
         self.scatter.bind(pressed=self.clicked)
 
@@ -289,7 +330,11 @@ class KivyCard(Card):
             ##TODO REMOVE CALLBACL WHEN REACHED!!!!
             #print "callback"
 
+
     def clicked(self, instance, pos):
+        if looking:
+            print "looking"
+            return
         print ('Card selected: printed from root widget: {pos}'.format(pos=pos))
         displayLock.release(self)
 
@@ -477,8 +522,10 @@ class MyApp(App):
                 i=row.rstrip('\n')
                 j=i.rstrip('\r')
                 k=j.split(",")
-                if len(k)==5:
+                if len(k)==6:
                     self.layout.append(j.split(","))
+                else:
+                    print "INVALID LAYOUT LINE:",k
 
 
         self.relativeLayout = RelativeLayout()
@@ -507,6 +554,10 @@ class MyApp(App):
         
         
         self.initDisplay()
+
+        global looking
+        looking = False
+        self.buttons["look"].enable(True,True)
         
         engineThread=EngineThread(engine)
         engineThread.start()
@@ -543,7 +594,7 @@ class MyApp(App):
     def initDisplay(self):
         if self.on:
             #print self.layout
-            for [ltype,data,xpos,ypos,scale] in self.layout:
+            for [ltype,data,xpos,ypos,scale,clickaction] in self.layout:
 
                 if ltype=="list":
                     l=self.lists[data+str(0)]
@@ -560,7 +611,7 @@ class MyApp(App):
                                   self.relativeLayout)
                         
                 elif ltype=="button":
-                    button = MyButton(data,self.relativeLayout)
+                    button = KivyButton(data,self.relativeLayout,getattr(self,clickaction))
                     button.scale = float(scale)
                     button.pos=(Window.width*float(xpos)/100,
                                 Window.height*float(ypos)/100)
@@ -781,7 +832,7 @@ class MyApp(App):
                     if card == displayLock.card :
                         returnValue = pick
                         break
-            elif type(displayLock.card) == MyButton:
+            elif type(displayLock.card) == KivyButton:
                 if displayLock.card.name == "done" and allowDone:
                     returnValue = ePlayable.done
                 elif displayLock.card.name == "cancel" and allowCancel:
@@ -892,6 +943,23 @@ class MyApp(App):
             victimPile.dealCard(moveTo,eCardState.normal)
         
 
+    def actionbutton(self,button):
+        if looking:
+            return False
+        displayLock.release(button)
+        return True
+        
+    def lookbutton(self,button):
+        global looking
+        if button.name == "look":
+            looking=True
+            self.buttons["look"].enable(False,False)
+            self.buttons["play"].enable(True,True)
+        if button.name == "play":
+            looking=False
+            self.buttons["play"].enable(False,False)
+            self.buttons["look"].enable(True,True)
+        return True
 
 ################################################################################
 #
