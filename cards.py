@@ -48,6 +48,7 @@ class Card(object):
         self.actualSpeed = 0
         self.state = eCardState.normal
         self.pile = False
+        self.age = 0
 
     def isBlank(self):
         return self.suite.name == eSuiteNames.Blank
@@ -161,6 +162,7 @@ class CardList(list):
     def append(self,item):
         super(CardList,self).append(item)
         item.pile=self
+        item.age=0
 
 
 ################################################################################
@@ -196,7 +198,7 @@ class CardPile(object):
     def append(self, item):
         self.__items.append(item)
         item.pile=self
-        display.display()
+        item.age=0
 
     #WARNING: ignores index
     #TODO: Internal only

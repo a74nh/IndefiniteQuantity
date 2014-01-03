@@ -61,12 +61,16 @@ class Upkeep(object):
     #
     
     def upkeepHalflife(self,playerLists,cardPile):
-        print "upkeep_Halflife"
-        pass
+
+        card = cardPile.peek()
+        card.age = card.age + 1
+        if card.age == 3:
+            cardPile.dealCard(self.tableau.playerDiscard,eCardState.normal)
+
 
     def upkeepHalflifeReturn(self,playerLists,cardPile):
         print "upkeepHalflifeReturn"
-        pass
+        fefeffef
 
 
     #Hunger

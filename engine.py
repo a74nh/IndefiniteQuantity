@@ -342,6 +342,22 @@ class GameEngine(object):
 
     def upkeep(self,playerLists):
         self.tableau.upkeepPhase=-1
+
+##        for cardPile in playerLists.workers:
+##            card = cardPile.peek()
+##            if not card.isBlank():
+##                card.age=card.age+1
+##                
+##        for cardPile in playerLists.soldiers:
+##            card = cardPile.peek()
+##            if not card.isBlank():
+##                card.age=card.age+1
+##
+##        for cardPile in playerLists.base:
+##            card = cardPile.peek()
+##            if not card.isBlank():
+##                card.age=card.age+1
+                                
         self.tableau.null(eEngineStages.upkeepSetup)
 
 
@@ -358,15 +374,15 @@ class GameEngine(object):
             self.tableau.null(eEngineStages.upkeepSetup)
             return
 
-        #getattr(self.upkeeps,"upkeep"+playerLists.suite.upkeep)(playerLists,card)
-        getattr(self.upkeeps,"upkeep"+"Service")(playerLists,cardPile)
+        getattr(self.upkeeps,"upkeep"+playerLists.suite.upkeep)(playerLists,cardPile)
+        #getattr(self.upkeeps,"upkeep"+"Service")(playerLists,cardPile)
 
                 
     def upkeepReturn(self,playerLists):
         cardPile = playerLists.soldiers[self.tableau.upkeepPhase]
 
-        #getattr(self.upkeeps,"upkeep"+playerLists.suite.upkeep+"Return")(playerLists)
-        getattr(self.upkeeps,"upkeep"+"Service"+"Return")(playerLists,cardPile)
+        getattr(self.upkeeps,"upkeep"+playerLists.suite.upkeep+"Return")(playerList,cardPile)
+        #getattr(self.upkeeps,"upkeep"+"Service"+"Return")(playerLists,cardPile)
 
 
     def enemyDeal(self,playerLists):
