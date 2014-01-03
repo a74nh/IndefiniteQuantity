@@ -158,9 +158,9 @@ class CardList(list):
         card.setState(newState)
         newCardList.append(card)
 
-##    def append(self,card):
-##        super(CardList,self).append(card)
-##        card.pile=self
+    def append(self,item):
+        super(CardList,self).append(item)
+        item.pile=self
 
 
 ################################################################################

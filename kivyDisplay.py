@@ -31,8 +31,8 @@ currentDir=""
 #c:\Users\Alan\Desktop\RobotEmpire\\"
 
 
-from kivy.config import Config
-Config.set('kivy', 'double_tap_timeout', '5') #< 500 ms between 2 touch ta
+#from kivy.config import Config
+#Config.set('kivy', 'double_tap_timeout', '5') #< 500 ms between 2 touch ta
 
 ################################################################################
 #
@@ -332,11 +332,24 @@ class KivyCard(Card):
 
 
     def clicked(self, instance, pos):
+        global looking
+        global lookingCard
         if looking:
-            print "looking"
-            return
-        print ('Card selected: printed from root widget: {pos}'.format(pos=pos))
-        displayLock.release(self)
+            if not self.isBlank():
+                if lookingCard == False:
+                    self.pile.bringToFront()
+                    lookingCard = self
+                    dest=0
+                    if self.scatter.x < Window.width/2:
+                        dest=Window.width/2
+                    self.setDest(dest,0,1,False,False)
+                else:
+                    lookingCard = False
+                    self.pile.updateDisplay()
+                print "looking"
+        else:
+            print ('Card selected: printed from root widget: {pos}'.format(pos=pos))
+            displayLock.release(self)
 
 
 ################################################################################
@@ -415,6 +428,11 @@ class KivyCardList(CardList):
         if self.displayed:
             offset=(len(self)-1)*int(card.image.width*self.scale*0.6)
             card.setDest(self.xpos+offset,self.ypos,self.scale,self,True)
+
+    def bringToFront(self):
+        parent = self.layout.parent
+        parent.remove_widget(self.layout)
+        parent.add_widget(self.layout)
             
 
 ################################################################################
@@ -474,6 +492,11 @@ class KivyCardPile(CardPile):
         if self.displayed:
             card.setDest(self.xpos+offset,self.ypos-offset,self.scale,self,True)
 
+    def bringToFront(self):
+        parent = self.layout.parent
+        parent.remove_widget(self.layout)
+        parent.add_widget(self.layout)
+            
 
 ################################################################################
 #
@@ -556,7 +579,9 @@ class MyApp(App):
         self.initDisplay()
 
         global looking
+        global lookingCard
         looking = False
+        lookingCard = False
         self.buttons["look"].enable(True,True)
         
         engineThread=EngineThread(engine)
@@ -951,14 +976,16 @@ class MyApp(App):
         
     def lookbutton(self,button):
         global looking
-        if button.name == "look":
-            looking=True
-            self.buttons["look"].enable(False,False)
-            self.buttons["play"].enable(True,True)
-        if button.name == "play":
-            looking=False
-            self.buttons["play"].enable(False,False)
-            self.buttons["look"].enable(True,True)
+        global lookingCard
+        if lookingCard == False:
+            if button.name == "look":
+                looking=True
+                self.buttons["look"].enable(False,False)
+                self.buttons["play"].enable(True,True)
+            if button.name == "play":
+                looking=False
+                self.buttons["play"].enable(False,False)
+                self.buttons["look"].enable(True,True)
         return True
 
 ################################################################################
