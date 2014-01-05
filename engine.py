@@ -39,13 +39,16 @@ class EnemyCardLists(object):
         self.suite=suite
 
         self.enemySoldiers=[]
-        self.enemyDiscard=CardPile("enemyDiscard",0)
-        self.enemyFactory = CardPile("enemyFactory",0)
+        self.enemyArmour=[]
 
-        self.enemyStock= CardPile("enemyStock",0)
+        self.enemyDiscard=CardPile("enemyDiscard",0)
+        self.enemyFactory=CardPile("enemyFactory",0)
+
+        self.enemyStock=CardPile("enemyStock",0)
 
         for x in range(5):
             self.enemySoldiers.append(CardPile("enemySoldiers{0}".format(x),0))
+            self.enemyArmour.append(CardList("enemyArmour{0}".format(x),0))
 
 
 ################################################################################
@@ -178,9 +181,6 @@ class Tableau(object):
             
             elif last['action'] == "userPickCost":
                 last['arg3'].insert(last['arg2'],last['arg1'])
-            
-            elif last['action'] == "moveCardTo":
-                last['arg2'].pop()
 
             elif last['action'] == "ToBlank":
                 last['arg1'].append(last['arg3'][last['arg2']])
@@ -274,16 +274,15 @@ class Tableau(object):
                                                                  'arg2': index,
                                                                  'arg3': cardList})
 
-    def moveCardTo(self,nextEngineStage,card,cardList):
-        self.__setStage(nextEngineStage)
-        self.__history.append({'action': 'moveCardTo', 'arg1': card,
-                                                       'arg2': cardList})
-        self.display.moveCardTo(card,cardList)
-
+    def moveFrom(self,oldCardList,index,newCardList,newState):
+        self.__history.append({'action': 'moveFrom', 'arg1': oldCardList,
+                                                     'arg2': index,
+                                                     'arg3' : newCardList})
+        oldCardList.moveFrom(index,newCardList,newState)
         
     def dealCard(self,oldCardList,newCardList,newState):
-        self.__history.append({'action': 'dealCardToBlank', 'arg1': oldCardList,
-                                                            'arg2': newCardList})
+        self.__history.append({'action': 'dealCard', 'arg1': oldCardList,
+                                                     'arg2': newCardList})
         oldCardList.dealCard(newCardList,newState)
 
 
@@ -401,6 +400,19 @@ class GameEngine(object):
 
                 if card.ctype != eCardTypes.soldier:
                     self.tableau.dealCard(enemyLists.enemySoldiers[i],
+                                          enemyLists.enemyDiscard,
+                                          eCardState.normal)
+
+            else:
+                self.tableau.dealCard(enemyLists.enemyStock,
+                                      enemyLists.enemyArmour[i],
+                                      eCardState.normal)
+
+                card=enemyLists.enemyArmour[i][-1]
+
+                if card.ctype != eCardTypes.armour:
+                    self.tableau.moveFrom(enemyLists.enemyArmour[i],
+                                          -1,
                                           enemyLists.enemyDiscard,
                                           eCardState.normal)
 
