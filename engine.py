@@ -74,7 +74,7 @@ class Tableau(object):
             elif card.suite.name == self.enemysuite.name:
                 if card.ctype == eCardTypes.factory:
                     self.enemyFactory.append(card)
-                elif card.ctype != eCardTypes.cover and card.ctype != eCardTypes.worker:
+                elif card.ctype == eCardTypes.soldier or card.ctype == eCardTypes.armour:
                     self.enemyStock.append(card)
                     card.setState(eCardState.turned)
             else:              
@@ -88,7 +88,7 @@ class Tableau(object):
                         if card.suite.name == p.suite.name:
                             p.factory.append(card)
                             break
-                elif card.ctype != eCardTypes.cover:
+                elif card.ctype != eCardTypes.cover and card.ctype != eCardTypes.armour:
                     self.playerStock.append(card)
                     card.setState(eCardState.turned)
 
@@ -127,10 +127,6 @@ class Tableau(object):
     
     def getPlayerLists(self,player):
         return self.__playerLists[player-1]
-        
-    #def dealEnemy(self,num):
-    #    for x in range(num):
-    #        self.enemyStock.moveI(0,self.enemySoldiers)
 
     def dealPlayer(self,player,num):
         for x in range(num):

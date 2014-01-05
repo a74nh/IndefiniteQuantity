@@ -141,6 +141,7 @@ class KivyButton(Scatter):
         self.size=self.image.size
         self.size_hint= (None, None)
         self.scale = 0.2
+        self.do_translation = False
         
         self.add_widget(self.image)
 

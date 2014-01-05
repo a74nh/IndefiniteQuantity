@@ -60,6 +60,22 @@ else
     text=[all],"scrap",92%,90%,15%,10%,left,wordwrap
     font=arial,16,T,[ink]
     text=[all],[scrap],92%,92%,15%,10%,left,wordwrap
+    
+  elseif = [type] = "armour" 
+    rectangle=[all],4%,66%,20%,22%,#000000,[box],0.03
+
+    font=arial,4,T,[ink]
+    text=[all],"speed",5%,68%,18%,10%,center,wordwrap
+
+    font=arial,16,T,[ink]
+    text=[all],[speed],5%,70%,18%,10%,center,wordwrap
+
+    font=arial,4,T,[ink]
+    text=[all],"attack : defense",5%,78%,18%,10%,center,wordwrap
+
+    font=arial,16,T,[ink]
+    text=[all],[attack1],5%,80%,18%,10%,center,wordwrap
+    
   endif
 
   if = [upkeep] > 0

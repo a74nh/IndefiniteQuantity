@@ -10,7 +10,7 @@ ePlayable = enum("none","pfrom1","pto1","pfrom2","pto2","single","cost","cancel"
 
 eOrder = enum("first","second","both","neither")
 
-eCardTypes = enum("space","worker","soldier","facility","instant","cover","factory")
+eCardTypes = enum("space","worker","soldier","facility","instant","armour","cover","factory")
 
 eSuiteNames = enum("Blank","Socialist Union Republic Army","Nuclear Bodgers","Insectoids","Void")
 
