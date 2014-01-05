@@ -208,24 +208,6 @@ class Tableau(object):
         self.display.updatePlayer(self.__playerLists[player-1],self.__turn)
         self.__player=player
 
-        
-##    def checkEnemy(self,nextEngineStage):
-##        self.__setStage(nextEngineStage)
-##        
-##        found=True
-##        while(found):
-##            found=False
-##            for x in self.enemySoldiers:
-##                if x.ctype != eCardTypes.soldier:
-##                    self.__history.append({'action': 'moveO', 'arg1': x,
-##                                                              'arg2': self.enemySoldiers.index(x),
-##                                                              'arg3': self.enemySoldiers,
-##                                                              'arg4': self.enemyDiscard})
-##                    
-##                    self.enemySoldiers.moveFrom(self.enemySoldiers.index(x),self.enemyDiscard)
-##                    #self.enemySoldiers.moveO(x,self.enemyDiscard)
-##                    found=True
-
 
     def userPickSingle(self,nextEngineStage,pickableFrom):
         self.__setStage(nextEngineStage)
@@ -387,22 +369,18 @@ class GameEngine(object):
 
     def enemyDeal(self,playerLists):
 
-        maxDeal = self.tableau.getTurn() + 1
+        maxDeal = self.tableau.getTurn()
         if maxDeal > 5:
             maxDeal=5
 
-        for i in range(5):
+        for i in range(maxDeal):
             card=self.tableau.enemySoldiers[i].peek()
-
-            if maxDeal == 0:
-                break
 
             if self.tableau.enemyStock.peek().isBlank():
                 print("ENEMY EMPTY STOCK TO DO")
                 ewfwef
 
             if card.isBlank():
-                maxDeal = maxDeal - 1
                 self.tableau.dealCard(self.tableau.enemyStock,
                                       self.tableau.enemySoldiers[i],
                                       eCardState.normal)
@@ -448,6 +426,10 @@ class GameEngine(object):
         cash = len(playerLists.hand)-1
         for card in playerLists.scrap:
             cash = cash + card.scrap
+
+        maxDeal = self.tableau.getTurn()
+        if maxDeal > 5:
+            maxDeal=5
         
         for card in playerLists.hand:
             #TODO: Add in effects
@@ -470,21 +452,25 @@ class GameEngine(object):
                 workercost=workercost+1
 
         if len(playerLists.hand) >=workercost:
+            count=0
             for cardPile in playerLists.workers:
                 card=cardPile.peek()
-                if card.isBlank():
+                if card.isBlank() and count<maxDeal:
                     card.playable=ePlayable.single
                     playableList.append((cardPile,card,-1))
                 else:
                     card.playable=ePlayable.none
+                count=count+1
 
+        count=0
         for cardPile in playerLists.soldiers:
             card=cardPile.peek()
-            if card.isBlank():
+            if card.isBlank() and count<maxDeal:
                 card.playable=ePlayable.pto1
                 playableList.append((cardPile,card,-1))
             else:
                 card.playable=ePlayable.none
+            count=count+1
 
         for cardPile in playerLists.base:
             card=cardPile.peek()
