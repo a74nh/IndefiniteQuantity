@@ -31,6 +31,9 @@ currentDir=""
 #c:\Users\Alan\Desktop\RobotEmpire\\"
 
 
+eLayouts = enum("none","horizontal","vertical")
+
+
 #from kivy.config import Config
 #Config.set('kivy', 'double_tap_timeout', '5') #< 500 ms between 2 touch ta
 
@@ -391,11 +394,12 @@ class KivyCardList(CardList):
         self.displayed=False
         self.lock = threading.Lock()
 
-    def initDisplay(self,xpos,ypos,scale,parentlayout):
+    def initDisplay(self,xpos,ypos,scale,parentlayout,orientation):
         self.displayed=True
         self.xpos=xpos
         self.ypos=ypos
         self.scale=scale
+        self.orientation=orientation
         self.layout= RelativeLayout()
         parentlayout.add_widget(self.layout)
         #self.ipos=(card.image.width*card.scatter.scale)
@@ -403,12 +407,13 @@ class KivyCardList(CardList):
 
     def updateDisplay(self):
         self.layout.clear_widgets()
-        offset=0
+        offsetx=0
+        offsety=0
         for card in self:
             card.scatter.scale=self.scale
-            card.scatter.pos=(self.xpos+offset,self.ypos)
+            card.scatter.pos=(self.xpos+offsetx,self.ypos+offsety)
             self.layout.add_widget(card.scatter)
-            offset=offset+int(card.image.width*card.scatter.scale*0.6)
+            offsetx,offsety=self.getOffset(offsetx,offsety,card,card.scatter.scale)
 
     def moveFrom(self,index,newCardList,newState):
         if self.displayed:
@@ -417,24 +422,33 @@ class KivyCardList(CardList):
         super(KivyCardList,self).moveFrom(index,newCardList,newState)
         if self.displayed:
             #update remaining cards
-            offset=0
+            offsetx=0
+            offsety=0
             for card in self:
-                card.scatter.pos=(self.xpos+offset,self.ypos)
-                offset=offset+int(card.image.width*card.scatter.scale*0.6)
+                card.scatter.pos=(self.xpos+offsetx,self.ypos+offsety)
+                offsetx,offsety=self.getOffset(offsetx,offsety,card,card.scatter.scale)
 
     def append(self,card):
         #self.lock.acquire()
         print card
         super(KivyCardList,self).append(card)
         if self.displayed:
-            offset=(len(self)-1)*int(card.image.width*self.scale*0.6)
-            card.setDest(self.xpos+offset,self.ypos,self.scale,self,True)
+            offsetx,offsety=self.getOffset(0,0,card,self.scale)
+            offsetx=offsetx*(len(self)-1)
+            offsety=offsety*(len(self)-1)
+            card.setDest(self.xpos+offsetx,self.ypos+offsety,self.scale,self,True)
 
     def bringToFront(self):
         parent = self.layout.parent
         parent.remove_widget(self.layout)
         parent.add_widget(self.layout)
             
+
+    def getOffset(self,currentx,currenty,card,scale):
+        if self.orientation == eLayouts.vertical:
+            return currentx,currenty-int(card.image.height*scale*0.3)
+        return currentx+int(card.image.width*scale*0.6),currenty
+
 
 ################################################################################
 #
@@ -449,7 +463,8 @@ class KivyCardPile(CardPile):
         self.displayed=False
         self.lock = threading.Lock()
         
-    def initDisplay(self,xpos,ypos,scale,parentlayout):
+    def initDisplay(self,xpos,ypos,scale,parentlayout,orientation):
+        #ignores orientation
         self.displayed=True
         self.xpos=int(xpos)
         self.ypos=int(ypos)
@@ -620,24 +635,26 @@ class MyApp(App):
     def initDisplay(self):
         if self.on:
             #print self.layout
-            for [ltype,data,xpos,ypos,scale,clickaction] in self.layout:
+            for [ltype,data,xpos,ypos,scale,arg6] in self.layout:
 
                 if ltype=="list":
                     l=self.lists[data+str(0)]
                     l.initDisplay(int(Window.width*float(xpos)/100),
                                   int(Window.height*float(ypos)/100),
                                   float(scale),
-                                  self.relativeLayout)
+                                  self.relativeLayout,
+                                  getattr(eLayouts,arg6))
                             
                 elif ltype=="playerlist":
                     l=self.lists[data+str(self.playerList.playerNumber)]
                     l.initDisplay(int(Window.width*float(xpos)/100),
                                   int(Window.height*float(ypos)/100),
                                   float(scale),
-                                  self.relativeLayout)
+                                  self.relativeLayout,
+                                  getattr(eLayouts,arg6))
                         
                 elif ltype=="button":
-                    button = KivyButton(data,self.relativeLayout,getattr(self,clickaction))
+                    button = KivyButton(data,self.relativeLayout,getattr(self,arg6))
                     button.scale = float(scale)
                     button.pos=(Window.width*float(xpos)/100,
                                 Window.height*float(ypos)/100)

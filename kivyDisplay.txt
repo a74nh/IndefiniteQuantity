@@ -5,11 +5,11 @@ list,enemySoldiers2,20,78,0.16,none
 list,enemySoldiers3,29,78,0.16,none
 list,enemySoldiers4,38,78,0.16,none
 
-list,enemyArmour0,7,78,0.05,none
-list,enemyArmour1,16,78,0.05,none
-list,enemyArmour2,25,78,0.05,none
-list,enemyArmour3,34,78,0.05,none
-list,enemyArmour4,43,78,0.05,none
+list,enemyArmour0,6,88,0.08,vertical
+list,enemyArmour1,15,88,0.08,vertical
+list,enemyArmour2,24,88,0.08,vertical
+list,enemyArmour3,33,88,0.08,vertical
+list,enemyArmour4,42,88,0.08,vertical
 
 list,enemyStock,77,78,0.1,none
 list,enemyDiscard,86,78,0.1,none
@@ -33,7 +33,7 @@ playerlist,playerBase3,77,26,0.16,none
 playerlist,playerBase4,86,26,0.16,none
 
 playerlist,playerScrap,60,3,0.16,none
-playerlist,playerHand,2,3,0.2,none
+playerlist,playerHand,2,3,0.2,horizontal
 
 playerlist,playerFactory,86,60,0.16,none
 
